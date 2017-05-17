@@ -18,7 +18,7 @@ end
 FOSSolver(;kwargs...) = FOSSolver(kwargs)
 
 
-type FOSMathProgModel{T1<:FOSAlgorithm, T<:FOSSolverData} <: AbstractConicModel
+type FOSMathProgModel <: AbstractConicModel
     input_numconstr::Int64            # Only needed for interface?
     input_numvar::Int64               # Only needed for interface?
     K1::ConeProduct
@@ -26,8 +26,8 @@ type FOSMathProgModel{T1<:FOSAlgorithm, T<:FOSSolverData} <: AbstractConicModel
     A::SparseMatrixCSC{Float64,Int}   # The A matrix (equalities)
     b::Vector{Float64}                # RHS
     c::Vector{Float64}                # The objective coeffs (always min)
-    alg::T1                           #This descides which algorithm to call
-    data::T2                          # Solver specific data is stored here
+    alg::FOSAlgorithm                 #This descides which algorithm to call
+    data::FOSSolverData               # Solver specific data is stored here
 #    orig_sense::Symbol               # Original objective sense
     # Post-solve
     solve_stat::Symbol
@@ -40,11 +40,7 @@ type FOSMathProgModel{T1<:FOSAlgorithm, T<:FOSSolverData} <: AbstractConicModel
     history::ValueHistories.MVHistory
 end
 
-function FOSMathProgModel(s::;kwargs...)
-    if FOSMethod ∉ keys(FOSMethods)
-        error("Invalid First Order Solver $FOSMethod.
-              Valid values for 'FOSSolver' are $(keys(FOSMethods))")
-    end
+function FOSMathProgModel(s::FOSAlgorithm; kwargs...)
     solverType = FOSMethods[FOSMethod]
     FOSMathProgModel{solverType}(0, 0, ConeProduct(), ConeProduct(), spzeros(0, 0),
                      Float64[], Float64[], solverType(), :NotSolved,

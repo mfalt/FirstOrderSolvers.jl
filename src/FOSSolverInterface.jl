@@ -48,7 +48,7 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.c = c
 
     # Calls a specific method based on the type T in model::FOSMathProgModel{T}
-    init_algorithm!(model)
+    init_algorithm!(model.alg, model)
 
     return model
 end
