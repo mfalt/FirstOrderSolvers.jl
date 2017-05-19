@@ -1,4 +1,4 @@
-import ProximalOperators: ProximableFunction, prox!, IndPSD, DualCone
+import ProximalOperators: ProximableFunction, prox!, IndPSD
 
 # TODO zero cone
 const conemap = Dict{Symbol, ProximableFunction}(
@@ -17,7 +17,7 @@ const badcones = ProximableFunction[]
 # type DualCone{T<:ProximableFunction} <: ProximableFunction
 #     C::T
 # end
-#
+
 # dual{T<:ProximableFunction}(C::T) = DualCone{T}(C)
 # dual(C::DualCone) = C.C
 
@@ -33,11 +33,11 @@ type ConeProduct{N,T} <: ProximableFunction
     cones::T
 end
 #
-# ConeProduct() = ConeProduct{0,Any}((),())
+ConeProduct() = ConeProduct{0,Any}((),())
 
-function ConeProduct{N,T}(ranges::NTuple{N, UnitRange{Int64}}, cones::T)
-    return ConeProduct{N,T}(ranges, cones)
-end
+# function ConeProduct(ranges::NTuple{N, UnitRange{Int64}}, cones::T) where {N,T}
+#     return ConeProduct{N,T}(ranges, cones)
+# end
 
 toRanges{N}(rangesIn::NTuple{N, UnitRange{Int64}}) = rangesIn
 
@@ -77,19 +77,19 @@ function ConeProduct(rangesIn, cones)
 end
 
 #Wrapper for dual prox to avoid double duals
-function proxDual!(C::ProximableFunction, x, y)
+function proxDual!(C::ProximableFunction, x::AbstractArray, y::AbstractArray)
     prox!(y, C, -x)
     @simd for i = 1:length(x)
         y[i] = x[i] + y[i]
     end
 end
-proxDual!(y, C::DualCone, x) = prox!(y, C.C, x)
+# proxDual!(y, C::DualCone, x) = prox!(y, C.C, x)
 
 
-function prox!{N,T}(y, C::ConeProduct{N,T}, x)
+function prox!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
     #TODO Paralell implementation
     for i = 1:N
-        FOS.prox!(view(y, C.ranges[i]), C.cones[i], view(x, C.ranges[i]))
+        prox!(view(y, C.ranges[i]), C.cones[i], view(x, C.ranges[i]))
     end
 end
 
@@ -101,9 +101,9 @@ proxDual!(y, C::IndFree, x)  = prox!(y, myIndZero, x)
 # Warning, this is only valid for IndNeg and IndPos (which is all we use)
 proxDual!(y, C::IndBox, x)   = prox!(y, C, x)
 
-function proxDual!(y, C::ConeProduct, x)
+function proxDual!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
     #TODO Paralell implementation
-    for i = 1:length(C.cones)
+    for i = 1:N
         proxDual!(C.cones[i], view(x, C.ranges[i]), view(y, C.ranges[i]))
     end
 end
@@ -116,9 +116,10 @@ type DualConeProduct{T1<:ConeProduct,T2<:ConeProduct} <: ProximableFunction
     n::Int64
 end
 
-DualConeProduct{T1,T2}(K1,K2) = DualConeProduct{T1,T2}(K1, K2, K1.ranges[end][end], K2.ranges[end][end])
-function prox!(y, K::DualConeProduct, x)
+DualConeProduct{T1,T2}(K1::T1,K2::T2) = DualConeProduct{T1,T2}(K1, K2, K1.ranges[end][end], K2.ranges[end][end])
+function prox!(y::AbstractArray, K::DualConeProduct, x::AbstractArray)
     m, n = K.m, K.n
+    K1, K2 = K.K1, K.K2
     nu = n+m+1
     xx = view(x, 1:n)
     xy = view(x, (n+1):(n+m))
@@ -134,6 +135,6 @@ function prox!(y, K::DualConeProduct, x)
     proxDual!(yy, K1, xy)
     y[nu] = max(x[nu], 0)
     proxDual!(yr, K2, xr)
-    prox!(    yr, K1, xs)
+    prox!(    ys, K1, xs)
     y[2nu] = max(x[2nu], 0)
 end

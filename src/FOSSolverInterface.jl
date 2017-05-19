@@ -1,5 +1,7 @@
-ConicModel(s::FOSSolver) = FOSMathProgModel(s; s.options...)
-LinearQuadraticModel(s::FOSSolver) = ConicToLPQPBridge(ConicModel(s))
+importall MathProgBase.SolverInterface
+
+ConicModel(s::FOSAlgorithm) = FOSMathProgModel(s; s.options...)
+LinearQuadraticModel(s::FOSAlgorithm) = ConicToLPQPBridge(ConicModel(s))
 
 function optimize!(m::FOSMathProgModel)
     solution = solve!(m) #TODO Code here!
@@ -23,6 +25,7 @@ function loadproblem!(model::FOSMathProgModel, c, A, b, constr_cones, var_cones)
 end
 
 function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
+    tic()
     model.input_numconstr = size(A,1)
     model.input_numvar = size(A,2)
 
@@ -48,12 +51,14 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.c = c
 
     # Calls a specific method based on the type T in model::FOSMathProgModel{T}
-    init_algorithm!(model.alg, model)
-
+    data = init_algorithm!(model.alg, model)
+    model.data = data
+    println("Time to initialize")
+    toc()
     return model
 end
 
 numvar(model::FOSMathProgModel) = model.input_numvar
 numconstr(model::FOSMathProgModel) = model.input_numconstr
 
-supportedcones(s::FOSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
+supportedcones(s::FOSAlgorithm) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]

@@ -1,5 +1,5 @@
 importall MathProgBase.SolverInterface
-export FOSSolver
+#export FOSAlgorithm
 
 type Solution
     x::Array{Float64, 1}
@@ -8,15 +8,16 @@ type Solution
     status::Symbol
 end
 
-abstract FOSSolverData
-
+abstract type FOSAlgorithm <: AbstractMathProgSolver end
+abstract type FOSSolverData end
+type FOSSolverDataPlaceholder <: FOSSolverData end
 
 # Define Solver for interface
-immutable FOSSolver <: AbstractMathProgSolver
-    options
-end
-FOSSolver(;kwargs...) = FOSSolver(kwargs)
-
+# immutable FOSSolver <: AbstractMathProgSolver
+#     options
+# end
+# FOSSolver(;kwargs...) = FOSSolver(kwargs)
+#
 
 type FOSMathProgModel <: AbstractConicModel
     input_numconstr::Int64            # Only needed for interface?
@@ -41,11 +42,7 @@ type FOSMathProgModel <: AbstractConicModel
 end
 
 function FOSMathProgModel(s::FOSAlgorithm; kwargs...)
-    solverType = FOSMethods[FOSMethod]
-    FOSMathProgModel{solverType}(0, 0, ConeProduct(), ConeProduct(), spzeros(0, 0),
-                     Float64[], Float64[], solverType(), :NotSolved,
+    FOSMathProgModel(0, 0, ConeProduct(), ConeProduct(), spzeros(0, 0),
+                     Float64[], Float64[], s, FOSSolverDataPlaceholder(), :NotSolved,
                      0.0, Float64[], Float64[], Float64[], Dict{Symbol,Any}(kwargs), -1, ValueHistories.MVHistory())
 end
-
-initialize!{T<:FOSMethodData}(model::FOSMathProgModel{T}) =
-    error("No initialize! method defined for solver data type $T")
