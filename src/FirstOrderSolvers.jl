@@ -1,6 +1,7 @@
 __precompile__()
 
 module FirstOrderSolvers
+export GAP, GAPA, GAPP
 
 using ProximalOperators
 import ValueHistories
