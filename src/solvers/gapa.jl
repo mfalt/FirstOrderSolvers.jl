@@ -3,9 +3,10 @@ GAP Adaptive
 
 """
 type GAPA  <: FOSAlgorithm
+    α::Float64
     options
 end
-GAPA(; kwargs...) = GAPA(kwargs)
+GAPA(α=1.0; kwargs...) = GAPA(α, kwargs)
 
 type GAPAData{T1,T2} <: FOSSolverData
     α12::Float64
@@ -18,7 +19,7 @@ GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, simila
 
 function init_algorithm!(::GAPA, model::FOSMathProgModel)
     hsde = HSDE(model)
-    GAPAData(1.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
 end
 
 """ normedScalar(x1,x2,y1,y2)
@@ -36,8 +37,8 @@ function normedScalar(x1,x2,y1,y2)
     return abs(sum)/sqrt(norm1*norm2)
 end
 
-function Base.step(alg::GAPA, data::GAPAData, x, status, longstep=nothing)
-    α12,tmp1,tmp2,S1,S2 = data.α12,data.tmp1,data.tmp2,data.S1,data.S2
+function Base.step(alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
+    α,α12,tmp1,tmp2,S1,S2 = alg.α,data.α12,data.tmp1,data.tmp2,data.S1,data.S2
     # Relaxed projection onto S1
     prox!(tmp1, S1, x)
     addprojeq(longstep, tmp1, x)
@@ -45,6 +46,7 @@ function Base.step(alg::GAPA, data::GAPAData, x, status, longstep=nothing)
     # Relaxed projection onto S2
     prox!(tmp2, S2, tmp1)
     checkstatus(status, tmp2)
+    println("α12: $α12")
     addprojineq(longstep, tmp2, tmp1)
     tmp2 .= α12.*tmp2 .+ (1-α12).*tmp1
     #Calculate θ_F estimate, normedScalar(x1,x2,y1,y2) = |<x1-x2,y1-y2>|/(||x1-x2||*||y1-y2||)
@@ -53,8 +55,15 @@ function Base.step(alg::GAPA, data::GAPAData, x, status, longstep=nothing)
     # Update α1, α2
     data.α12 = 2/(1+s) # α1,α2 = 2/(1+sin(Θ_F))
     #Set output
-    x .= tmp2
+    x .= α.*tmp2 .+ (1-α).*x
     return
+end
+
+function getsol(alg::GAPA, data::GAPAData, x)
+    tmp1,tmp2,S1,S2 = data.tmp1,data.tmp2,data.S1,data.S2
+    prox!(tmp1, S1, x)
+    prox!(tmp2, S2, tmp1)
+    return tmp2
 end
 
 support_longstep(Alg::GAPA) = true

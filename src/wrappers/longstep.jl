@@ -12,7 +12,6 @@ type LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
     nsave::Int64
     saved::SavedPlanes{Float64}
     saveineq::Bool
-    ialgo::Int64
     savepos::Int64
     eqi::Int64
     uneqi::Int64
@@ -37,17 +36,16 @@ end
 
 getmn(data::LongstepWrapperData) = getmn(data.algdata)
 
-function Base.step(wrap::LongstepWrapper, longstep::LongstepWrapperData, x, status)
+function Base.step(wrap::LongstepWrapper, longstep::LongstepWrapperData, x, i, status::AbstractStatus)
     nsave, longinterval = longstep.nsave, longstep.longinterval
-    longstep.ialgo += 1
     #println("At iteration $i")
-    savepos = (longstep.ialgo-1)%longinterval - longinterval + nsave + 2 # Index of collection to save
+    savepos = (i-1)%longinterval - longinterval + nsave + 2 # Index of collection to save
     #println("savepos: $savepos")
     if 0 < savepos  #Should we start saving collections?
         longstep.savepos = savepos
         longstep.eqi, longstep.uneqi = 0, 0
     end
-    step(wrap.alg, longstep.algdata, x, status, longstep)
+    step(wrap.alg, longstep.algdata, x, i, status, longstep)
     #If time to do longstep
     if longstep.savepos == nsave+1
         #println("Doing projection!")
@@ -60,6 +58,9 @@ end
 support_longstep(alg) = false
 projections_per_step(alg) = (0,0)
 
+function getsol(alg::LongstepWrapper, data::LongstepWrapperData, x)
+    getsol(alg.alg, data.algdata, x)
+end
 
 addprojeq(::Void, y, x) = nothing
 addprojineq(::Void, y, x) = nothing

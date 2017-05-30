@@ -12,6 +12,7 @@ abstract type FOSAlgorithm <: AbstractMathProgSolver end
 abstract type FOSSolverData end
 type FOSSolverDataPlaceholder <: FOSSolverData end
 
+abstract type AbstractStatus end
 # Define Solver for interface
 # immutable FOSSolver <: AbstractMathProgSolver
 #     options

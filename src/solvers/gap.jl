@@ -23,7 +23,7 @@ function init_algorithm!(::GAP, model::FOSMathProgModel)
     GAPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
 end
 
-function Base.step(alg::GAP, data::GAPData, x, status, longstep=nothing)
+function Base.step(alg::GAP, data::GAPData, x, i, status::AbstractStatus, longstep=nothing)
     α,α1,α2 = alg.α, alg.α1, alg.α2
     tmp1,tmp2,S1,S2 = data.tmp1, data.tmp2, data.S1, data.S2
     # Relaxed projection onto S1
@@ -38,6 +38,13 @@ function Base.step(alg::GAP, data::GAPData, x, status, longstep=nothing)
     # Relaxation
     x .= α.*tmp2 .+ (1-α).*x
     return
+end
+
+function getsol(alg::GAP, data::GAPData, x)
+    tmp1,tmp2,S1,S2 = data.tmp1,data.tmp2,data.S1,data.S2
+    prox!(tmp1, S1, x)
+    prox!(tmp2, S2, tmp1)
+    return tmp2
 end
 
 support_longstep(alg::GAP) = true
