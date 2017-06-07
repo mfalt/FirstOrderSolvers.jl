@@ -1,13 +1,30 @@
 import ValueHistories: push!
 
+type Status <: AbstractStatus
+    m::Int64
+    n::Int64
+    i::Int64
+    model::FOSMathProgModel
+    status::Symbol
+    checki::Int64
+    eps::Float64
+    verbose::Int64
+    checked::Bool
+    debug::Int64
+end
+
+type NoStatus <: AbstractStatus
+    status::Symbol
+end
+
 """ checkstatus(stat::Status, x)
 Returns `false` if no check was made
 If convergence check is done, returns `true` and sets stat.status to one of:
     :Continue, :Optimal, :Unbounded, :Infeasible
 """
-function checkstatus(stat::Status, z)
+function checkstatus(stat::Status, z; override = false)
     #TODO fix m, n
-    if stat.i % stat.checki == 0
+    if stat.i % stat.checki == 0 || override
         m, n, i, model, verbose, debug, ϵ = stat.m, stat.n, stat.i, stat.model, stat.verbose, stat.debug, stat.eps
         x, y, s, r, τ, κ = getvalues(model, m, n, z, i, verbose, debug)
         ϵpri = ϵdual = ϵgap = ϵinfeas = ϵunbound = ϵ
@@ -37,9 +54,11 @@ function checkstatus(stat::Status, z)
             status = :Infeasible
         end
         stat.status = status
-        return true
+        stat.checked = true
+        return stat.checked
     else
-        return false
+        stat.checked = false
+        return stat.checked
     end
 end
 

@@ -23,13 +23,19 @@ function HSDE_getinitialvalue(model::FOSMathProgModel)
     return x
 end
 
-function HSDE_populatesolution(model::FOSMathProgModel, x)
+function HSDE_populatesolution(model::FOSMathProgModel, x, status::Status)
     m, n = size(model.A)
     l = m+n+1
     @assert length(x) == 2l
     τ = x[l]
     κ = x[2l]
     #TODO Eveluate status
-    status = :Optimal
-    solution = Solution(x[1:n]/τ, x[n+1:n+m]/τ, x[l+n+1:l+n+m]/τ, status)
+    endstatus = status.status
+    if endstatus == :Continue
+        endstatus = :Indeterminate
+    end
+    solution = Solution(x[1:n]/τ, x[n+1:n+m]/τ, x[l+n+1:l+n+m]/τ, endstatus)
 end
+
+HSDEStatus(model, checki, eps, verbose, debug) = Status(model.data.S2.m, model.data.S2.n, 0, model,
+                                                        :Continue, checki, eps, verbose, false, debug)
