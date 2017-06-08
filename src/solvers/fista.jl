@@ -10,7 +10,7 @@ end
 FISTA(α=1.0; kwargs...) = FISTA(α, kwargs)
 
 immutable FISTAData{T1,T2} <: FOSSolverData
-    t::Ref{Float64}
+    t::Base.RefValue{Float64}
     y::Array{Float64,1}
     xold::Array{Float64,1}
     tmp1::Array{Float64,1}
