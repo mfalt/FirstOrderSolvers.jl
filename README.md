@@ -34,7 +34,6 @@ Currently, the available solvers are
 | `GAP(α=0.8, α1=1.8, α2=1.8; kwargs...)` | Generalized Alternating Projections |    |
 | `DR(α=0.5; kwargs...)` | Douglas-Rachford (`GAP(α, 2.0, 2.0)`)  | Douglas, Rachford (1956) |
 | `AP(α=0.5; kwargs...)` | Alternating Projections (`GAP(α, 1.0, 1.0)`)  | Agmon (1954), Bregman (1967) |
-| `GAP(α=0.8, α1=1.8, α2=1.8; kwargs...)` | Generalized Alternating Projections |    |
 | `GAPA(α=1.0; kwargs...)` | GAP Adaptive | [Fält, Giselsson (2017)](https://arxiv.org/abs/1703.10547) |
 | `FISTA(α=1.0; kwargs...)` | FISTA |  Beck, Teboulle (2009) |
 | `Dykstra(; kwargs...)` | Dykstra | Boyle, Dykstra (1986) |
