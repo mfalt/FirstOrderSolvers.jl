@@ -15,7 +15,7 @@ type GAPAData{T1,T2} <: FOSSolverData
     S1::T1
     S2::T2
 end
-GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, similar(x), similar(x), S1::T1, S2::T2)
+#GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, tmp1, tmp2, S1, S2)
 
 function init_algorithm!(::GAPA, model::FOSMathProgModel)
     hsde = HSDE(model)
@@ -59,12 +59,12 @@ function Base.step(alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, long
     return
 end
 
-function getsol(alg::GAPA, data::GAPAData, x)
+function getsol(::GAPA, data::GAPAData, x)
     tmp1,tmp2,S1,S2 = data.tmp1,data.tmp2,data.S1,data.S2
     prox!(tmp1, S1, x)
     prox!(tmp2, S2, tmp1)
     return tmp2
 end
 
-support_longstep(Alg::GAPA) = true
-projections_per_step(Alg::GAPA) = (1,1)
+support_longstep(::GAPA) = true
+projections_per_step(::GAPA) = (1,1)

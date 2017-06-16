@@ -71,7 +71,7 @@ function Base.step(alg::GAPP, data::GAPPData, x, i, status::AbstractStatus, long
     return
 end
 
-function getsol(alg::GAPP, data::GAPPData, x)
+function getsol(::GAPP, data::GAPPData, x)
     tmp1,tmp2,S1,S2 = data.tmp1,data.tmp2,data.S1,data.S2
     prox!(tmp1, S1, x)
     prox!(tmp2, S2, tmp1)
@@ -79,4 +79,4 @@ function getsol(alg::GAPP, data::GAPPData, x)
 end
 
 support_longstep(alg::GAPP) = false
-projections_per_step(alg::GAPP) = (o,0)
+projections_per_step(alg::GAPP) = (0,0)

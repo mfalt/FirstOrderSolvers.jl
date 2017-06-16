@@ -55,15 +55,15 @@ function Base.step(wrap::LongstepWrapper, longstep::LongstepWrapperData, x, i, s
     end
 end
 
-support_longstep(alg) = false
-projections_per_step(alg) = (0,0)
+support_longstep(::Any) = false
+projections_per_step(::Any) = (0,0)
 
 function getsol(alg::LongstepWrapper, data::LongstepWrapperData, x)
     getsol(alg.alg, data.algdata, x)
 end
 
-addprojeq(::Void, y, x) = nothing
-addprojineq(::Void, y, x) = nothing
+addprojeq(::Void, ::Any, ::Any) = nothing
+addprojineq(::Void, ::Any, ::Any) = nothing
 
 function addprojeq{T<:LongstepWrapperData}(long::T, y, x)
     if long.savepos > 0

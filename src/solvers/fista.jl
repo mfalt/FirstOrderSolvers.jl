@@ -45,7 +45,7 @@ function Base.step(alg::FISTA, data::FISTAData, x, i, status::AbstractStatus, lo
     return
 end
 
-function getsol(alg::FISTA, data::FISTAData, x)
+function getsol(::FISTA, data::FISTAData, x)
     tmp1,S1,S2 = data.tmp1,data.S1,data.S2
     tmp2 = similar(x)
     prox!(tmp1, S1, x)
@@ -53,5 +53,5 @@ function getsol(alg::FISTA, data::FISTAData, x)
     return tmp2
 end
 
-support_longstep(alg::FISTA) = true
-projections_per_step(alg::FISTA) = (1,1)
+support_longstep(::FISTA) = true
+projections_per_step(::FISTA) = (1,1)

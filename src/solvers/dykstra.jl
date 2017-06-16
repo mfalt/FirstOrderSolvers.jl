@@ -22,7 +22,7 @@ function init_algorithm!(::Dykstra, model::FOSMathProgModel)
                 hsde.indAffine, hsde.indCones)
 end
 
-function Base.step(alg::Dykstra, data::DykstraData, x, i, status::AbstractStatus, longstep=nothing)
+function Base.step(::Dykstra, data::DykstraData, x, i, status::AbstractStatus, longstep=nothing)
     p,q,y,S1,S2 = data.p,data.q,data.y,data.S1,data.S2
 
     prox!(y, S1, x .+ p)
@@ -35,7 +35,7 @@ function Base.step(alg::Dykstra, data::DykstraData, x, i, status::AbstractStatus
     return
 end
 
-function getsol(alg::Dykstra, data::DykstraData, x)
+function getsol(::Dykstra, data::DykstraData, x)
     y,S1,S2 = data.y,data.S1,data.S2
     tmp1 = similar(x) #Ok to allocate here, could overwrite p, q, if safe warmstart?
     prox!(tmp1, S1, x)
@@ -43,5 +43,5 @@ function getsol(alg::Dykstra, data::DykstraData, x)
     return y #We reuse y here
 end
 
-support_longstep(alg::Dykstra) = true
-projections_per_step(alg::Dykstra) = (1,1)
+support_longstep(::Dykstra) = true
+projections_per_step(::Dykstra) = (1,1)

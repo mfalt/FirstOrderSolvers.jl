@@ -45,8 +45,8 @@ function toRanges{N, T<:Integer}(rangesIn::NTuple{N,Array{T,1}})
     ranges = Array{UnitRange{Int64},1}(N)
     for j in 1:N
         range = rangesIn[j]
-        for (i,e) in enumerate(range[1]:range[end])
-            if e != range[i]
+        for (i,el) in enumerate(range[1]:range[end])
+            if el != range[i]
                 error("Invalid range in input")
             end
         end

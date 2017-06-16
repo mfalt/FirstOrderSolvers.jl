@@ -62,7 +62,7 @@ function checkstatus(stat::Status, z; override = false)
     end
 end
 
-function checkstatus(stat::NoStatus, z)
+function checkstatus(::NoStatus, z)
     return false
 end
 
