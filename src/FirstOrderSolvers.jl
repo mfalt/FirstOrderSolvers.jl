@@ -8,7 +8,9 @@ import ValueHistories
 include("cones.jl")
 include("types.jl")
 include("status.jl")
+include("utilities/conjugategradients.jl")
 include("problemforms/HSDE.jl")
+include("problemforms/HSDEAffine.jl")
 include("FOSSolverInterface.jl")  # MathProgBase interface
 include("solverwrapper.jl")
 

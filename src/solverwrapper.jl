@@ -25,8 +25,8 @@ end
 
 
 function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
-    t = tic()
-    printstatusheader()
+    tic()
+    printstatusheader(status)
     for i = 1:max_iters
         status.i = i
         step(alg, data, x, i, status)
@@ -39,7 +39,9 @@ function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
     if !status.checked #If max_iters reached without check
         checkstatus(status, guess, override = true) #Force check independent of iteration count
     end
-    println("Time for iterations: ")
-    toc()
+    if status.verbose > 0
+        println("Time for iterations: ")
+        toc()
+    end
     return guess
 end

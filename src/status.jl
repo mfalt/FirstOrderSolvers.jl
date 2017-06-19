@@ -66,10 +66,14 @@ function checkstatus(::NoStatus, z)
     return false
 end
 
-function printstatusheader()
-    println("-"^76)
-    println(" Iter | pri res | dua res | rel gap | pri obj | dua obj | kap/tau")
-    println("-"^76)
+printstatusheader(::NoStatus) = nothing
+
+function printstatusheader(stat::Status)
+    if stat.verbose > 0
+        println("-"^76)
+        println(" Iter | pri res | dua res | rel gap | pri obj | dua obj | kap/tau")
+        println("-"^76)
+    end
 end
 
 function printstatusiter(i, p, d, g, stx, bty, κτ)

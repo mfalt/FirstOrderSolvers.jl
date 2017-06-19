@@ -1,0 +1,51 @@
+using SugarBLAS: @blas!
+
+immutable CGdata{T}
+    r::Array{T,1}
+    p::Array{T,1}
+    z::Array{T,1}
+    xinit::Array{T,1}#TODO remove this
+    firstrun::Base.RefValue{Bool}
+end
+
+CGdata{T}(r::AbstractArray{T},p::AbstractArray{T},z::AbstractArray{T}) = CGdata{T}(r,p,z, T[], Ref(true))
+
+CGdata(size) = CGdata{Float64}(Array{Float64,1}(size), Array{Float64,1}(size), Array{Float64,1}(size), Array{Float64,1}(size), Ref(true))
+
+function conjugategradient!(x,A,b; useasinitial=true)
+    cgdata = CGdata(similar(b), similar(b), similar(b))
+    if !useasinitial
+        x .= 1.0
+    end
+    conjugategradient!(x, A, b, cgdata.r, cgdata.p, cgdata.z)
+    return cgdata
+end
+
+"""
+`conjugategradient!(x,A,b,r,p,Ap; tol = size(A,2)*eps(), max_iters = 10000)`
+
+Solve `A*x==b` with the conjugate gradient method.
+Uses `x` as warm start and stores solution in `x`.
+`r`,`p`,`Ap` should be same size as `x` and will be changed.
+
+Implemented as in "Matrix Compuatations" 2nd edition, Golub and Van Loan (1989)
+"""
+function conjugategradient!(x,A,b,r,p,Ap; tol = size(A,2)*eps(), max_iters = 10000)
+    A_mul_B!(Ap, A, x)
+    r .= b .- Ap
+    p .= r
+    rn = dot(r,r)
+    for i = 1:max_iters
+        A_mul_B!(Ap, A, p)
+        α = rn/dot(Ap,p)
+        @blas! x += α*p
+        @blas! r -= α*Ap
+        #println("$i: ")
+        norm(r) <= tol && break
+        rnold = rn
+        rn = dot(r,r)
+        β = rn/rnold
+        p .= r .+ β.*p
+    end
+    return
+end
