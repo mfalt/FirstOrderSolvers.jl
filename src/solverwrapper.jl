@@ -13,11 +13,11 @@ function solve!(model::FOSMathProgModel)
     verbose = :verbose ∈ keys(opts) ? opts[:verbose] : 1
     debug = :debug ∈ keys(opts) ? opts[:debug] : 1
     eps = :eps ∈ keys(opts) ? opts[:eps] : 1e-5
-    checki = :checki ∈ keys(opts) ? opts[:checki] : 1
+    checki = :checki ∈ keys(opts) ? opts[:checki] : 100
 
     x = getinitialvalue(model, model.alg, model.data)
     #TODO general status
-    status = HSDEStatus(model, checki, eps, verbose, debug)
+    status = model.status_generator(model, checki, eps, verbose, debug)
     guess = iterate(model.alg, model.data, status, x, max_iters)
     sol = populate_solution(model, model.alg, model.data, guess, status)
     return sol

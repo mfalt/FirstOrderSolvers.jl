@@ -4,6 +4,8 @@ ConicModel(s::FOSAlgorithm) = FOSMathProgModel(s; s.options...)
 LinearQuadraticModel(s::FOSAlgorithm) = ConicToLPQPBridge(ConicModel(s))
 
 function optimize!(m::FOSMathProgModel)
+    #TODO fix history
+    m.history = ValueHistories.MVHistory()
     solution = solve!(m) #TODO Code here!
 
     m.solve_stat = solution.status
@@ -51,7 +53,8 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.c = c
 
     # Calls a specific method based on the type T in model::FOSMathProgModel{T}
-    data = init_algorithm!(model.alg, model)
+    data, status_generator = init_algorithm!(model.alg, model)
+    model.status_generator = status_generator
     model.data = data
     println("Time to initialize")
     toc()

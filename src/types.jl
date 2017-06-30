@@ -13,6 +13,9 @@ abstract type FOSSolverData end
 type FOSSolverDataPlaceholder <: FOSSolverData end
 
 abstract type AbstractStatus end
+type NoStatus <: AbstractStatus
+    status::Symbol
+end
 # Define Solver for interface
 # immutable FOSSolver <: AbstractMathProgSolver
 #     options
@@ -39,11 +42,13 @@ type FOSMathProgModel <: AbstractConicModel
     slack::Vector{Float64}
     options::Dict{Symbol, Any}
     enditr::Int64
+    status_generator::Function
     history::ValueHistories.MVHistory
 end
 
 function FOSMathProgModel(s::FOSAlgorithm; kwargs...)
     FOSMathProgModel(0, 0, ConeProduct(), ConeProduct(), spzeros(0, 0),
                      Float64[], Float64[], s, FOSSolverDataPlaceholder(), :NotSolved,
-                     0.0, Float64[], Float64[], Float64[], Dict{Symbol,Any}(kwargs), -1, ValueHistories.MVHistory())
+                     0.0, Float64[], Float64[], Float64[], Dict{Symbol,Any}(kwargs), -1,
+                     x -> error("No status generator defined"), ValueHistories.MVHistory())
 end

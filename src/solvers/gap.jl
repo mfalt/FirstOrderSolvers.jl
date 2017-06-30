@@ -19,22 +19,42 @@ immutable GAPData{T1,T2} <: FOSSolverData
 end
 
 function init_algorithm!(::GAP, model::FOSMathProgModel)
-    hsde = HSDE(model)
-    GAPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    hsde, status_generator = HSDE(model)
+    data = GAPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    return data, status_generator
+end
+
+function S1!(y, alg::GAP, data::GAPData, x, i, status::AbstractStatus, longstep=nothing)
+    α1, S1 =  alg.α1, data.S1
+    prox!(y, S1, x)
+    addprojeq(longstep, y, x)
+    y .= α1.*y .+ (1-α1).*x
+end
+
+function S2!(y, alg::GAP, data::GAPData, x, i, status::AbstractStatus, longstep=nothing)
+    α2, S2 =  alg.α2, data.S2
+    prox!(y, S2, x)
+    checkstatus(status, y)
+    addprojineq(longstep, y, x)
+    y .= α2.*y .+ (1-α2).*x
 end
 
 function Base.step(alg::GAP, data::GAPData, x, i, status::AbstractStatus, longstep=nothing)
-    α,α1,α2 = alg.α, alg.α1, alg.α2
-    tmp1,tmp2,S1,S2 = data.tmp1, data.tmp2, data.S1, data.S2
+    α = alg.α
+    tmp1, tmp2 = data.tmp1, data.tmp2
     # Relaxed projection onto S1
-    prox!(tmp1, S1, x)
-    addprojeq(longstep, tmp1, x)
-    tmp1 .= α1.*tmp1 .+ (1-α1).*x
-    # Relaxed projection onto S2
-    prox!(tmp2, S2, tmp1)
-    checkstatus(status, tmp2)
-    addprojineq(longstep, tmp2, tmp1)
-    tmp2 .= α2.*tmp2 .+ (1-α2).*tmp1
+    S1!(tmp1, alg, data, x, i, status, longstep)
+    # α1, S1 =  alg.α1, data.S1
+    # prox!(tmp1, S1, x)
+    # addprojeq(longstep, tmp1, x)
+    # tmp1 .= α1.*tmp1 .+ (1-α1).*x
+    #Relaxed projection onto S2
+    S2!(tmp2, alg, data, tmp1, i, status, longstep)
+    # α2, S2 =  alg.α2, data.S2
+    # prox!(tmp2, S2, tmp1)
+    # checkstatus(status, tmp2)
+    # addprojineq(longstep, tmp2, tmp1)
+    # tmp2 .= α2.*tmp2 .+ (1-α2).*tmp1
     # Relaxation
     x .= α.*tmp2 .+ (1-α).*x
     return

@@ -19,8 +19,9 @@ immutable FISTAData{T1,T2} <: FOSSolverData
 end
 
 function init_algorithm!(::FISTA, model::FOSMathProgModel)
-    hsde = HSDE(model)  #Is zeros OK?
-    FISTAData(Ref(1.0), zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    hsde, status_generator = HSDE(model)  #Is zeros OK?
+    data = FISTAData(Ref(1.0), zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    return data, status_generator
 end
 
 function Base.step(alg::FISTA, data::FISTAData, x, i, status::AbstractStatus, longstep=nothing)

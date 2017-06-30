@@ -99,7 +99,7 @@ function prox!(y::AbstractVector, A::HSDEMatrix, x::AbstractVector)
     max_iters = 1000
     cgdata = A.cgdata
     if cgdata.firstrun.x #Pointer, has this been initialized
-        cgdata.xinit .= x
+        cgdata.xinit .= x #Works as guess since Q square
         cgdata.firstrun.x = false
     end
     #Since y is the initial guess, use previous solution

@@ -20,8 +20,9 @@ immutable GAPPData{T1,T2} <: FOSSolverData
 end
 
 function init_algorithm!(::GAPP, model::FOSMathProgModel)
-    hsde = HSDE(model)
-    GAPPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    hsde, status_generator = HSDE(model)
+    data = GAPPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    return data, status_generator
 end
 
 function Base.step(alg::GAPP, data::GAPPData, x, i, status::AbstractStatus, longstep=nothing)

@@ -11,7 +11,10 @@ function HSDE(model::FOSMathProgModel)
         -model.c'     -model.b'     0      ]
     S1 = IndAffine([Q -speye(size(Q,1))], zeros(size(Q,1)))
     S2 = DualConeProduct(model.K1,model.K2)
-    return HSDE{eltype(model.A), typeof(S2)}(S1, S2, 2*size(Q,1))
+    m,n = S2.m, S2.n
+    status_generator = (mo, checki, eps, verbose, debug) ->
+        Status(m, n, 0, mo, :Continue, checki, eps, verbose, false, debug)
+    return HSDE{eltype(model.A), typeof(S2)}(S1, S2, 2*size(Q,1)), status_generator
 end
 
 function HSDE_getinitialvalue(model::FOSMathProgModel)

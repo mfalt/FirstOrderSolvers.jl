@@ -27,14 +27,14 @@ function testHSDEQ_A_mul_B(Q1, Q2, m, n)
 
     y1, y2 = randn(m+n+1), randn(m+n+1)
 
-    @time A_mul_B!(y1, Q1, rhs1)
-    @time A_mul_B!(y2, Q2, rhs2)
+    A_mul_B!(y1, Q1, rhs1)
+    A_mul_B!(y2, Q2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
 
-    @time At_mul_B!(y1, Q1, rhs1)
-    @time At_mul_B!(y2, Q2, rhs2)
+    At_mul_B!(y1, Q1, rhs1)
+    At_mul_B!(y2, Q2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
@@ -46,14 +46,14 @@ function testHSDEMatrix_A_mul_B(M1, M2, m, n)
 
     y1, y2 = randn(2m+2n+2), randn(2m+2n+2)
 
-    @time A_mul_B!(y1, M1, rhs1)
-    @time A_mul_B!(y2, M2, rhs2)
+    A_mul_B!(y1, M1, rhs1)
+    A_mul_B!(y2, M2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
 
-    @time At_mul_B!(y1, M1, rhs1)
-    @time At_mul_B!(y2, M2, rhs2)
+    At_mul_B!(y1, M1, rhs1)
+    At_mul_B!(y2, M2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2

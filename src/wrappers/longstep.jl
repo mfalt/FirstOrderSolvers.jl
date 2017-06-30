@@ -20,18 +20,19 @@ type LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
 end
 
 function LongstepWrapper{T}(alg::T; longinterval=100, nsave=10, kwargs...)
-    LongstepWrapper{T}(longinterval, nsave, alg, kwargs)
+    LongstepWrapper{T}(longinterval, nsave, alg, [kwargs;alg.options])
 end
 
 function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
     alg, longinterval, nsave = long.alg, long.longinterval, long.nsave
     !support_longstep(alg) && error("Algorithm alg does not support longstep")
-    data =  init_algorithm!(alg, model)
+    data, status_generator =  init_algorithm!(alg, model)
     neq, nineq = projections_per_step(alg)
     #TODO x
     x = HSDE_getinitialvalue(model)
     saved = SavedPlanes(x, nsave, neq, nineq)
-    LongstepWrapperData(longinterval, nsave, saved, false, 0, -1, 1, 1, similar(x), data)
+    data = LongstepWrapperData(longinterval, nsave, saved, false, 0, 1, 1, similar(x), data)
+    return data, status_generator
 end
 
 getmn(data::LongstepWrapperData) = getmn(data.algdata)

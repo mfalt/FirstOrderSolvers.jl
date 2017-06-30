@@ -17,9 +17,10 @@ immutable DykstraData{T1,T2} <: FOSSolverData
 end
 
 function init_algorithm!(::Dykstra, model::FOSMathProgModel)
-    hsde = HSDE(model)
-    DykstraData(zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n),
+    hsde, status_generator = HSDE(model)
+    data = DykstraData(zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n),
                 hsde.indAffine, hsde.indCones)
+    return data, status_generator
 end
 
 function Base.step(::Dykstra, data::DykstraData, x, i, status::AbstractStatus, longstep=nothing)

@@ -13,9 +13,6 @@ type Status <: AbstractStatus
     debug::Int64
 end
 
-type NoStatus <: AbstractStatus
-    status::Symbol
-end
 
 """ checkstatus(stat::Status, x)
 Returns `false` if no check was made

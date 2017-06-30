@@ -77,7 +77,7 @@ function ConeProduct(rangesIn, cones)
 end
 
 #Wrapper for dual prox to avoid double duals
-function proxDual!(C::ProximableFunction, x::AbstractArray, y::AbstractArray)
+function proxDual!(y::AbstractArray, C::ProximableFunction, x::AbstractArray)
     prox!(y, C, -x)
     @simd for i = 1:length(x)
         y[i] = x[i] + y[i]
@@ -95,16 +95,16 @@ end
 
 ## Some better dual projections
 const myIndFree = IndFree()
-proxDual!(y, C::IndPoint, x) = prox!(y, myIndFree, x)
+proxDual!(y::AbstractArray, C::IndZero, x::AbstractArray) = prox!(y, myIndFree, x)
 const myIndZero = IndPoint()
-proxDual!(y, C::IndFree, x)  = prox!(y, myIndZero, x)
-# Warning, this is only valid for IndNeg and IndPos (which is all we use)
-proxDual!(y, C::IndBox, x)   = prox!(y, C, x)
+proxDual!(y::AbstractArray, C::IndFree, x::AbstractArray)  = prox!(y, myIndZero, x)
+proxDual!(y::AbstractArray, C::IndNonnegative, x::AbstractArray)   = prox!(y, C, x)
+proxDual!(y::AbstractArray, C::IndNonpositive, x::AbstractArray)   = prox!(y, C, x)
 
 function proxDual!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
     #TODO Paralell implementation
     for i = 1:N
-        proxDual!(C.cones[i], view(x, C.ranges[i]), view(y, C.ranges[i]))
+        proxDual!(view(y, C.ranges[i]), C.cones[i], view(x, C.ranges[i]))
     end
 end
 

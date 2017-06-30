@@ -1,12 +1,17 @@
 """
-GAP Adaptive
+`GAPA(α=1.0, β=0.0; kwargs...)``
 
+GAP Adaptive
+Same as GAP but with adaptive `α1,α2` set to optimal `αopt=2/(1+sinθ)`
+according to the estimate of the Friedrischs angle `θ`.
+`β` is averaging factor between `αopt` and `2`: `α1=α2= (1-β)*αopt + β*2.0`.
 """
 type GAPA  <: FOSAlgorithm
     α::Float64
+    β::Float64
     options
 end
-GAPA(α=1.0; kwargs...) = GAPA(α, kwargs)
+GAPA(α=1.0, β=0.0; kwargs...) = GAPA(α, β, kwargs)
 
 type GAPAData{T1,T2} <: FOSSolverData
     α12::Float64
@@ -18,8 +23,9 @@ end
 #GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, tmp1, tmp2, S1, S2)
 
 function init_algorithm!(::GAPA, model::FOSMathProgModel)
-    hsde = HSDE(model)
-    GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    hsde, status_generator = HSDE(model)
+    data = GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    return data, status_generator
 end
 
 """ normedScalar(x1,x2,y1,y2)
@@ -37,23 +43,42 @@ function normedScalar(x1,x2,y1,y2)
     return abs(sum)/sqrt(norm1*norm2)
 end
 
+function S1!(y, alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
+    α12, S1 =  data.α12, data.S1
+    prox!(y, S1, x)
+    addprojeq(longstep, y, x)
+    y .= α12.*y .+ (1-α12).*x
+end
+
+function S2!(y, alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
+    α12, S2 =  data.α12, data.S2
+    prox!(y, S2, x)
+    checkstatus(status, y)
+    addprojineq(longstep, y, x)
+    y .= α12.*y .+ (1-α12).*x
+end
+
 function Base.step(alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
-    α,α12,tmp1,tmp2,S1,S2 = alg.α,data.α12,data.tmp1,data.tmp2,data.S1,data.S2
+    α,β = alg.α,alg.β
+    α12,tmp1,tmp2,S1,S2 = data.α12,data.tmp1,data.tmp2,data.S1,data.S2
     # Relaxed projection onto S1
-    prox!(tmp1, S1, x)
-    addprojeq(longstep, tmp1, x)
-    tmp1 .= α12.*tmp1 .+ (1-α12).*x
+    S1!(tmp1, alg, data, x,    i, status, longstep)
+    # prox!(tmp1, S1, x)
+    # addprojeq(longstep, tmp1, x)
+    # tmp1 .= α12.*tmp1 .+ (1-α12).*x
     # Relaxed projection onto S2
-    prox!(tmp2, S2, tmp1)
-    checkstatus(status, tmp2)
-    println("α12: $α12")
-    addprojineq(longstep, tmp2, tmp1)
-    tmp2 .= α12.*tmp2 .+ (1-α12).*tmp1
+    S2!(tmp2, alg, data, tmp1, i, status, longstep)
+    # prox!(tmp2, S2, tmp1)
+    # checkstatus(status, tmp2)
+    # #println("α12: $α12")
+    # addprojineq(longstep, tmp2, tmp1)
+    # tmp2 .= α12.*tmp2 .+ (1-α12).*tmp1
     #Calculate θ_F estimate, normedScalar(x1,x2,y1,y2) = |<x1-x2,y1-y2>|/(||x1-x2||*||y1-y2||)
     scl = clamp(normedScalar(tmp2,tmp1,tmp1,x), 0.0, 1.0)
     s = sqrt(1-scl^2) #Efficient way to sin(acos(scl))
     # Update α1, α2
-    data.α12 = 2/(1+s) # α1,α2 = 2/(1+sin(Θ_F))
+    αopt = 2/(1+s) # α1,α2 = 2/(1+sin(Θ_F))
+    data.α12 = (1-β)*αopt + β*2.0
     #Set output
     x .= α.*tmp2 .+ (1-α).*x
     return
