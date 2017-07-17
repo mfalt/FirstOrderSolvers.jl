@@ -17,6 +17,7 @@ include("solverwrapper.jl")
 
 include("wrappers/longstep.jl")
 include("wrappers/linesearch.jl")
+include("solvers/defaults.jl")
 include("solvers/solvers.jl")
 #include("lapack.jl")
 #include("solvermethods.jl")
