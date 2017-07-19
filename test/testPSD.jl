@@ -6,7 +6,7 @@ y = Variable((2, 2))
 
 #Solve with SCS
 p = minimize(vecnorm(y-ys), isposdef(y))
-solve!(p, SCSSolver(eps=1e-8))
+solve!(p, SCSSolver(eps=1e-8, verbose=0))
 
 ysol  = copy(y.value)
 
@@ -20,6 +20,6 @@ prox!(X, IndPSD(), Y)
 
 #Solve with DR
 p = minimize(vecnorm(y-ys), isposdef(y))
-solve!(p, DR(eps=1e-8))
+solve!(p, DR(eps=1e-8, verbose=0))
 
 @test y.value ≈ ysol atol=1e-8
