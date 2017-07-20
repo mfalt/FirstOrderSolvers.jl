@@ -8,7 +8,7 @@ Package for large scale convex optimization solvers in julia. This package is in
 The package is currently under **active development** and uses the [ProximalOperators.jl](https://github.com/kul-forbes/ProximalOperators.jl) package to do the low level projections.
 
 ## Installation
-To run the solvers you need to have the following packages
+To run the solvers you need to have the following package
 ```julia
 Pkg.clone("https://github.com/mfalt/FirstOrderSolvers.jl.git")
 ```
