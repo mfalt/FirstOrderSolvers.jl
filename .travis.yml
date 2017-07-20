@@ -4,7 +4,7 @@ os:
   - linux
   - osx
 julia:
-  - release
+  - 0.6
   - nightly
 matrix:
   allow_failures:
@@ -12,9 +12,11 @@ matrix:
 notifications:
   email: false
 # uncomment the following lines to override the default test script
-#script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("FirstOrderSolvers"); Pkg.test("FirstOrderSolvers"; coverage=true)'
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone("https://github.com/mfalt/Convex.jl.git");'
+  - julia -e 'Pkg.clone("https://github.com/kul-forbes/ProximalOperators.jl.git");'
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("FirstOrderSolvers"); Pkg.test("FirstOrderSolvers"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
   - julia -e 'cd(Pkg.dir("FirstOrderSolvers")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
