@@ -15,7 +15,6 @@ notifications:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone("https://github.com/mfalt/Convex.jl.git");'
-  - julia -e 'Pkg.clone("https://github.com/kul-forbes/ProximalOperators.jl.git");'
   - julia -e 'Pkg.clone(pwd()); Pkg.build("FirstOrderSolvers"); Pkg.test("FirstOrderSolvers"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
