@@ -41,11 +41,18 @@ function conjugategradient!(x,A,b,r,p,Ap; tol = size(A,2)*eps(), max_iters = 100
         @blas! x += α*p
         @blas! r -= α*Ap
         #println("$i: ")
-        norm(r) <= tol && break
+        if norm(r) <= tol
+            # TODO incorperate CG in status
+            # println(i)
+            break
+        end
         rnold = rn
         rn = dot(r,r)
         β = rn/rnold
-        p .= r .+ β.*p
+        #p .= r .+ β.*p
+        @blas! p *= β
+        @blas! p += r
+        i == max_iters && warn("CG reached max iterations, result may be inaccurate")
     end
     return
 end

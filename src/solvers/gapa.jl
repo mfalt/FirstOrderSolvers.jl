@@ -9,9 +9,10 @@ according to the estimate of the Friedrischs angle `θ`.
 type GAPA  <: FOSAlgorithm
     α::Float64
     β::Float64
+    direct::Bool
     options
 end
-GAPA(α=1.0, β=0.0; kwargs...) = GAPA(α, β, kwargs)
+GAPA(α=1.0, β=0.0; direct=false, kwargs...) = GAPA(α, β, direct, kwargs)
 
 type GAPAData{T1,T2} <: FOSSolverData
     α12::Float64
@@ -23,8 +24,8 @@ type GAPAData{T1,T2} <: FOSSolverData
 end
 #GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, tmp1, tmp2, S1, S2)
 
-function init_algorithm!(::GAPA, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model)
+function init_algorithm!(alg::GAPA, model::FOSMathProgModel)
+    hsde, status_generator = HSDE(model, direct=alg.direct)
     data = GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n),
             Ref(false), hsde.indAffine, hsde.indCones)
     return data, status_generator

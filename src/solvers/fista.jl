@@ -5,9 +5,10 @@ FISTA
 """
 type FISTA <: FOSAlgorithm
     α::Float64
+    direct::Bool
     options
 end
-FISTA(α=1.0; kwargs...) = FISTA(α, kwargs)
+FISTA(α=1.0; direct=false, kwargs...) = FISTA(α, direct, kwargs)
 
 immutable FISTAData{T1,T2} <: FOSSolverData
     t::Base.RefValue{Float64}
@@ -18,8 +19,8 @@ immutable FISTAData{T1,T2} <: FOSSolverData
     S2::T2
 end
 
-function init_algorithm!(::FISTA, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model)  #Is zeros OK?
+function init_algorithm!(alg::FISTA, model::FOSMathProgModel)
+    hsde, status_generator = HSDE(model, direct=alg.direct)  #Is zeros OK?
     data = FISTAData(Ref(1.0), zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
     return data, status_generator
 end
