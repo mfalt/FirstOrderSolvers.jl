@@ -10,7 +10,6 @@ The package is currently under **active development** and uses the [ProximalOper
 ## Installation
 To run the solvers you need to have the following packages
 ```julia
-Pkg.add("Convex")
 Pkg.clone("https://github.com/mfalt/FirstOrderSolvers.jl.git")
 ```
 
