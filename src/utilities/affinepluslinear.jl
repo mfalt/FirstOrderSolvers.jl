@@ -62,18 +62,23 @@ type AffinePlusLinear{T,M<:AbstractMatrix{T}} <: ProximalOperators.ProximableFun
     b::Array{Float64,1}
     q::Array{Float64,1}
     rhs::Array{Float64,1}
+    decreasing_accuracy::Bool
+    i::Int64    #Count for number of calls, descides the tolerance
+    cgiter::Int64 #How many iterarions CG did last time
     cgdata::CGdata{Float64}
 end
 
-function AffinePlusLinear{T,M<:AbstractMatrix{T}}(A::M, b, q, β)
+function AffinePlusLinear{T,M<:AbstractMatrix{T}}(A::M, b, q, β; decreasing_accuracy=false)
     am, an = size(A)
     @assert β == 1 || β == -1
     #Initiate second half of rhs, maybe without view?
     rhs = Array{T}(am+an)
     rhs2 = view(rhs, (1+an):(am+an))
     rhs2 .= b
-    return AffinePlusLinear{T,M}(KKTMatrix(A), A, β, b, q, rhs, CGdata(length(rhs)))
+    return AffinePlusLinear{T,M}(KKTMatrix(A), A, β, b, q, rhs, decreasing_accuracy, 1, 0, CGdata(length(rhs)))
 end
+
+getcgiter(S::AffinePlusLinear) = S.cgiter
 
 function prox!(y::AbstractArray, S::AffinePlusLinear, x::AbstractArray)
     #x2 = (2π-I)v or similar
@@ -100,11 +105,20 @@ function prox!(y::AbstractArray, S::AffinePlusLinear, x::AbstractArray)
     #Since y is the initial guess, use previous solution
     y .= cgdata.xinit
     #Now run CG
-    tol = size(S.A,2)*eps()
+    tol = if S.decreasing_accuracy
+        max(0.2^sqrt(S.i), size(S.A,2)*eps())
+    else
+        size(S.A,2)*eps()
+    end
+    #println(tol)
+    S.i += 1
     max_iters = 1000
     #TODO Verify that CG can solve this problem correctly
-    conjugategradient!(y, S.M, S.rhs, cgdata.r, cgdata.p, cgdata.z,
-                       tol = tol, max_iters = max_iters)
+    iter = conjugategradient!(y, S.M, S.rhs, cgdata.r, cgdata.p, cgdata.z,
+                                tol = tol, max_iters = max_iters)
+
+    iter == max_iters && warn("CG reached max iterations, result may be inaccurate")
+    S.cgiter = iter
     cgdata.xinit .= y #Save initial guess for next prox!
     #Now scale y2 with beta β
     y2 .*= β

@@ -14,12 +14,12 @@ function HSDE(model::FOSMathProgModel; direct=false)
             IndAffine([Q -speye(size(Q,1))], zeros(size(Q,1)))
         else
             # Using CG on KKT system
-            AffinePlusLinear(Q, zeros(size(Q,1)), zeros(size(Q,1)), 1)
+            AffinePlusLinear(Q, zeros(size(Q,1)), zeros(size(Q,1)), 1, decreasing_accuracy=true)
         end
     S2 = DualConeProduct(model.K1,model.K2)
     m,n = S2.m, S2.n
     status_generator = (mo, checki, eps, verbose, debug) ->
-        Status(m, n, 0, mo, :Continue, checki, eps, verbose, false, debug)
+        Status(m, n, 0, mo, :Continue, checki, eps, verbose, false, direct, time_ns(), model.init_duration, debug)
     return HSDE(S1, S2, 2*size(Q,1)), status_generator
 end
 
@@ -45,6 +45,3 @@ function HSDE_populatesolution(model::FOSMathProgModel, x, status::Status)
     end
     solution = Solution(x[1:n]/τ, x[n+1:n+m]/τ, x[l+n+1:l+n+m]/τ, endstatus)
 end
-
-HSDEStatus(model, checki, eps, verbose, debug) = Status(model.data.S2.m, model.data.S2.n, 0, model,
-                                                        :Continue, checki, eps, verbose, false, debug)

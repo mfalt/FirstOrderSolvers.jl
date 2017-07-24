@@ -20,3 +20,8 @@ Val{:Fast} : Line search available with low extra cost
    `S1` has to be an affine operator, i.e. S1(x+y)+S1(0)=S1(x)+S2(y).
 """
 support_linesearch(::Any) = Val{:False}
+
+#Defaults to that data.S1 counts cg iteration
+function getcgiter(data::FOSSolverData)
+    return getcgiter(data.S1)
+end

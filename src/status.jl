@@ -10,6 +10,9 @@ type Status <: AbstractStatus
     eps::Float64
     verbose::Int64
     checked::Bool
+    direct::Bool
+    init_time::UInt64     #As reported by time_ns()
+    init_duration::UInt64 #In nano-seconds
     debug::Int64
 end
 
@@ -22,6 +25,7 @@ If convergence check is done, returns `true` and sets stat.status to one of:
 function checkstatus(stat::Status, z; override = false)
     #TODO fix m, n
     if stat.i % stat.checki == 0 || override
+        t = time_ns() - stat.init_time
         m, n, i, model, verbose, debug, ϵ = stat.m, stat.n, stat.i, stat.model, stat.verbose, stat.debug, stat.eps
         x, y, s, r, τ, κ = getvalues(model, m, n, z, i, verbose, debug)
         ϵpri = ϵdual = ϵgap = ϵinfeas = ϵunbound = ϵ
@@ -30,13 +34,18 @@ function checkstatus(stat::Status, z; override = false)
         ctx = (model.c'*x)[1]
         bty = (model.b'*y)[1]
         g   = norm(ctx/τ + bty/τ)/(1+abs(ctx/τ)+abs(bty/τ))
-
         if debug > 0
-            savedata(i, p, d, g, ctx, bty, κ, τ, x, y, s, model, debug)
+            savedata(i, p, d, g, ctx, bty, κ, τ, x, y, s, t, model, debug)
         end
         # TODO test u^T v
         if verbose > 0
-            printstatusiter(i, p, d, g, ctx, bty, κ/τ)
+            if !stat.direct
+                cgiter = getcgiter(stat.model.data)
+                push!(model.history, :cgiter, i, cgiter)
+                printstatusiter(i, p, d, g, ctx, bty, κ/τ, cgiter, t)
+            else
+                printstatusiter(i, p, d, g, ctx, bty, κ/τ, t)
+            end
         end
 
         status = :Continue
@@ -67,14 +76,22 @@ printstatusheader(::NoStatus) = nothing
 
 function printstatusheader(stat::Status)
     if stat.verbose > 0
-        println("-"^76)
-        println(" Iter | pri res | dua res | rel gap | pri obj | dua obj | kap/tau")
-        println("-"^76)
+        println("Time to initialize: $(stat.init_duration/1e9)s")
+        width = 76 + (stat.direct ? 0 : 5)
+        println("-"^width)
+        print(" Iter | pri res | dua res | rel gap | pri obj | dua obj | kap/tau")
+        !stat.direct && print(" | cg ")
+        println(" | time")
+        println("-"^width)
     end
 end
 
-function printstatusiter(i, p, d, g, stx, bty, κτ)
-    @printf("%6d|% .2e % .2e % .2e % .2e % .2e % .2e\n",i,p,d,g,stx,-bty,κτ)
+function printstatusiter(i, p, d, g, stx, bty, κτ, t)
+    @printf("%6d|% 9.2e % 9.2e % 9.2e % 9.2e % 9.2e % 9.2e % .1es\n",i,p,d,g,stx,-bty,κτ,t/1e9)
+end
+
+function printstatusiter(i, p, d, g, stx, bty, κτ, cgiter, t)
+    @printf("%6d|% 9.2e % 9.2e % 9.2e % 9.2e % 9.2e % 9.2e % 4d % .1es\n",i,p,d,g,stx,-bty,κτ,cgiter,t/1e9)
 end
 
 function getvalues(model, m, n, z, i, verbose, debug)
@@ -109,9 +126,9 @@ end
 # end
 
 
-@generated function savedata(i, p, d, g, ctx, bty, κ, τ, x, y, s, model, debug)
+@generated function savedata(i, p, d, g, ctx, bty, κ, τ, x, y, s, t, model, debug)
     ex = :(history = model.history)
-    for v in  [:p, :d, :g, :ctx, :bty, :κ, :τ] #:t0
+    for v in  [:p, :d, :g, :ctx, :bty, :κ, :τ, :t]
         ex = :($ex ; push!(history, $(parse(":$v")), i, $v))
     end
     ex2 = :()

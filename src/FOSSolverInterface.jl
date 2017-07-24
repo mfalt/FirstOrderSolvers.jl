@@ -27,7 +27,7 @@ function loadproblem!(model::FOSMathProgModel, c, A, b, constr_cones, var_cones)
 end
 
 function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
-    tic()
+    t1 = time_ns()
     model.input_numconstr = size(A,1)
     model.input_numvar = size(A,2)
 
@@ -56,8 +56,8 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     data, status_generator = init_algorithm!(model.alg, model)
     model.status_generator = status_generator
     model.data = data
-    println("Time to initialize")
-    toc()
+    t2 = time_ns()
+    model.init_duration = t2-t1
     return model
 end
 
