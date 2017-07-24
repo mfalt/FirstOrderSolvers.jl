@@ -1,3 +1,5 @@
+export LongstepWrapper
+
 include("saveplanes.jl")
 
 type LongstepWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
@@ -55,9 +57,6 @@ function Base.step(wrap::LongstepWrapper, longstep::LongstepWrapperData, x, i, s
         x .= longstep.tmp
     end
 end
-
-support_longstep(::Any) = false
-projections_per_step(::Any) = (0,0)
 
 function getsol(alg::LongstepWrapper, data::LongstepWrapperData, x)
     getsol(alg.alg, data.algdata, x)

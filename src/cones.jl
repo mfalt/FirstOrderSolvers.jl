@@ -8,7 +8,7 @@ const conemap = Dict{Symbol, ProximableFunction}(
     :NonPos => IndNonpositive(),
     :SOC => IndSOC(),
     :SOCRotated => IndRotatedSOC(),
-    :SDP => IndPSD(),
+    :SDP => IndPSD(scaling=true),
     :ExpPrimal => IndExpPrimal(),
     :ExpDual => IndExpDual()
 )
@@ -97,9 +97,11 @@ end
 const myIndFree = IndFree()
 proxDual!(y::AbstractArray, C::IndZero, x::AbstractArray) = prox!(y, myIndFree, x)
 const myIndZero = IndPoint()
-proxDual!(y::AbstractArray, C::IndFree, x::AbstractArray)  = prox!(y, myIndZero, x)
+proxDual!(y::AbstractArray, C::IndFree, x::AbstractArray)          = prox!(y, myIndZero, x)
 proxDual!(y::AbstractArray, C::IndNonnegative, x::AbstractArray)   = prox!(y, C, x)
 proxDual!(y::AbstractArray, C::IndNonpositive, x::AbstractArray)   = prox!(y, C, x)
+# TODO figure out if self dual PSD
+#proxDual!(y::AbstractArray, C::IndPSD, x::AbstractArray)           = prox!(y, C, x)
 
 function proxDual!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
     #TODO Paralell implementation

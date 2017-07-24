@@ -1,25 +1,51 @@
 """
 Representation of the matrix [I A'; A -I]
 """
-type KKTMatrix{T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+immutable KKTMatrix{T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     A::M
     am::Int64
     an::Int64
+    # TODO test and remove if not better
+    # x1::SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}
+    # x2::SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}
+    # y1::SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}
+    # y2::SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}
 end
 
-KKTMatrix{T, M<:AbstractMatrix{T}}(A::M) = KKTMatrix{T,M}(A, size(A)...)
+KKTMatrix{T, M<:AbstractMatrix{T}}(A::M) = KKTMatrix{T,M}(A, size(A)...)#,
+#            view([1.],1:1), view([1.],1:1), view([1.],1:1), view([1.],1:1))
 
-function Base.A_mul_B!{T}(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T})
+# Alternative implementation with "constant" views
+
+# @inbounds function Base.A_mul_B!{T}(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T})
+#      if M.x1.parent !== x || M.y1.parent !== y
+#         M.x1 = view(x,      1:M.an     )
+#         M.x2 = view(x, M.an+1:M.an+M.am)
+#         M.y1 = view(y,      1:M.an     )
+#         M.y2 = view(y, M.an+1:M.an+M.am)
+#         #println("Update pointers")
+#     end
+#
+#     # [I A';
+#     #  A -I]
+#     At_mul_B!(M.y1, M.A, M.x2)
+#     @blas! M.y1 += M.x1
+#     A_mul_B!(M.y2,  M.A, M.x1)
+#     @blas! M.y2 -= M.x2
+# end
+
+@inbounds function Base.A_mul_B!{T}(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T})
     x1 = view(x,      1:M.an     )
     x2 = view(x, M.an+1:M.an+M.am)
     y1 = view(y,      1:M.an     )
     y2 = view(y, M.an+1:M.an+M.am)
+
     # [I A';
     #  A -I]
     At_mul_B!(y1, M.A, x2)
-    y1 .+= x1
+    @blas! y1 += x1
     A_mul_B!(y2,  M.A, x1)
-    y2 .-= x2
+    @blas! y2 -= x2
 end
 
 #Assuming we don't introduce scaling ρ

@@ -9,22 +9,25 @@ according to the estimate of the Friedrischs angle `θ`.
 type GAPA  <: FOSAlgorithm
     α::Float64
     β::Float64
+    direct::Bool
     options
 end
-GAPA(α=1.0, β=0.0; kwargs...) = GAPA(α, β, kwargs)
+GAPA(α=1.0, β=0.0; direct=false, kwargs...) = GAPA(α, β, direct, kwargs)
 
 type GAPAData{T1,T2} <: FOSSolverData
     α12::Float64
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
+    constinit::Base.RefValue{Bool} # If constant term has been calculated (linesearch feature)
     S1::T1
     S2::T2
 end
 #GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, tmp1, tmp2, S1, S2)
 
-function init_algorithm!(::GAPA, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model)
-    data = GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::GAPA, model::FOSMathProgModel)
+    hsde, status_generator = HSDE(model, direct=alg.direct)
+    data = GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n),
+            Ref(false), hsde.indAffine, hsde.indCones)
     return data, status_generator
 end
 
@@ -41,6 +44,18 @@ function normedScalar(x1,x2,y1,y2)
         norm2 += d2^2
     end
     return abs(sum)/sqrt(norm1*norm2)
+end
+
+function S1constant!(y, alg::GAPA, data::GAPAData, mem, i)
+    α12 = data.α12
+    if !data.constinit.x
+        y .= 0.0
+        #TODO high accuracy?
+        prox!(mem, S1, y)
+        data.constinit.x = true
+    end
+    y .= α12.*mem# .+ (1-α1).*0.0
+    return
 end
 
 function S1!(y, alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
@@ -93,3 +108,5 @@ end
 
 support_longstep(::GAPA) = true
 projections_per_step(::GAPA) = (1,1)
+
+support_linesearch(::GAPA) = Val{:Fast}

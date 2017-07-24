@@ -4,9 +4,10 @@ Dykstra
 
 """
 type Dykstra <: FOSAlgorithm
+    direct::Bool
     options
 end
-Dykstra(;kwargs...) = Dykstra(kwargs)
+Dykstra(;direct=false, kwargs...) = Dykstra(direct, kwargs)
 
 immutable DykstraData{T1,T2} <: FOSSolverData
     p::Array{Float64,1}
@@ -16,8 +17,8 @@ immutable DykstraData{T1,T2} <: FOSSolverData
     S2::T2
 end
 
-function init_algorithm!(::Dykstra, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model)
+function init_algorithm!(alg::Dykstra, model::FOSMathProgModel)
+    hsde, status_generator = HSDE(model, direct=alg.direct)
     data = DykstraData(zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n),
                 hsde.indAffine, hsde.indCones)
     return data, status_generator
