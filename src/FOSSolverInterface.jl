@@ -39,13 +39,13 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
         cone_vars[1] in badcones && error("Cone type $(cone_vars[1]) not supported")
     end
 
-    conesK1 = tuple([conemap[t[1]] for t in constr_cones]...)
-    indexK1 = tuple([t[2] for t in constr_cones]...)
-    model.K1 = ConeProduct(indexK1, conesK1)
+    conesK1 = [conemap[t[1]] for t in constr_cones]
+    indexK1 = [(t[2],) for t in constr_cones]
+    model.K1 = SlicedSeparableSum(conesK1, indexK1)
 
-    conesK2 = tuple([conemap[t[1]] for t in var_cones]...)
-    indexK2 = tuple([t[2] for t in var_cones]...)
-    model.K2 = ConeProduct(indexK2, conesK2)
+    conesK2 = [conemap[t[1]] for t in var_cones]
+    indexK2 = [(t[2],) for t in var_cones]
+    model.K2 = SlicedSeparableSum(conesK2, indexK2)
 
     model.A = A
     # TODO figure out :Min/:Max
