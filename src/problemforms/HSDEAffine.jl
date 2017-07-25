@@ -8,7 +8,7 @@ immutable HSDEMatrixQ{T,M<:AbstractMatrix{T},V<:AbstractVector{T}} <: AbstractMa
 end
 
 """
-HSDEMatrixQ2(A::M, b::V, c::V) where {T,M<:AbstractMatrix{T},V<:AbstractVector{T}}
+HSDEMatrixQ(A::M, b::V, c::V) where {T,M<:AbstractMatrix{T},V<:AbstractVector{T}}
 """
 function HSDEMatrixQ(A::M, b::V, c::V) where {T,M<:AbstractMatrix{T},V<:AbstractVector{T}}
     am, an = size(A)
@@ -47,15 +47,17 @@ function LinAlg.A_mul_B!{T,M<:AbstractArray{T,2},V<:AbstractArray{T,1}}(Y::Abstr
     c = Q.c
     At_mul_B!(y1, A, b2)
     A_mul_B!( y2, A, b1)
-    @inbounds y1 .=  y1 .+ c.*b3
-    @inbounds y2 .= b.*b3 .- y2
+    #TODO maybe switch back for readability?
+    @blas! y1 += b3*c # y1 .=  y1 .+ c.*b3
+    @blas! y2 -= b3*b # y2 .= b.*b3 .- y2
+    scale!(y2, -1)
     Y[Q.am+Q.an+1] = - dot(c, b1) - dot(b,b2)
     return Y
 end
 
 function LinAlg.At_mul_B!{T,M<:AbstractArray{T,2},V<:AbstractArray{T,1}}(Y::AbstractArray{T,1}, Q::HSDEMatrixQ{T,M,V}, B::AbstractArray{T,1})
     A_mul_B!(Y,Q,B)
-    @inbounds  Y .= - Y
+    scale!(Y, -1)
     return Y
 end
 

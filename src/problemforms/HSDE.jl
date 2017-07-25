@@ -6,13 +6,18 @@ end
 
 function HSDE(model::FOSMathProgModel; direct=false)
     m,n = size(model.A)
-    Q = [spzeros(n,n) model.A'      model.c;
-        -model.A      spzeros(m,m)  model.b;
-        -model.c'     -model.b'     0      ]
+
     S1 = if direct
             # Uses direct solver from ProximalOperators
+            Q = [spzeros(n,n) model.A'      model.c;
+                -model.A      spzeros(m,m)  model.b;
+                -model.c'     -model.b'     0      ]
             IndAffine([Q -speye(size(Q,1))], zeros(size(Q,1)))
         else
+            Q = HSDEMatrixQ(model.A, model.b, model.c)
+            # Q = [spzeros(n,n) model.A'      model.c;
+            #     -model.A      spzeros(m,m)  model.b;
+            #     -model.c'     -model.b'     0      ]
             # Using CG on KKT system
             AffinePlusLinear(Q, zeros(size(Q,1)), zeros(size(Q,1)), 1, decreasing_accuracy=true)
         end
@@ -20,7 +25,7 @@ function HSDE(model::FOSMathProgModel; direct=false)
     m,n = S2.m, S2.n
     status_generator = (mo, checki, eps, verbose, debug) ->
         Status(m, n, 0, mo, :Continue, checki, eps, verbose, false, direct, time_ns(), model.init_duration, debug)
-    return HSDE(S1, S2, 2*size(Q,1)), status_generator
+    return HSDE(S1, S2, 2*(size(model.A,1)+size(model.A,2)+1)), status_generator
 end
 
 function HSDE_getinitialvalue(model::FOSMathProgModel)
