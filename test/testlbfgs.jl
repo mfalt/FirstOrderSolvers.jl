@@ -53,7 +53,7 @@ end
 
 #With H0 = γI
 n = 30
-lbfgs = LBFGSstate(m,30, usegamma=false)
+lbfgs = LBFGSstate(m,30, usegamma=true)
 
 #x2save = Array{Float64,2}(m, 300)
 x2 = copy(x0)
