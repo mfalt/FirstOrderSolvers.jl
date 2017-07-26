@@ -26,8 +26,8 @@ end
 type FOSMathProgModel <: AbstractConicModel
     input_numconstr::Int64            # Only needed for interface?
     input_numvar::Int64               # Only needed for interface?
-    K1::ConeProduct
-    K2::ConeProduct
+    K1::SlicedSeparableSum
+    K2::SlicedSeparableSum
     A::SparseMatrixCSC{Float64,Int}   # The A matrix (equalities)
     b::Vector{Float64}                # RHS
     c::Vector{Float64}                # The objective coeffs (always min)
@@ -48,7 +48,7 @@ type FOSMathProgModel <: AbstractConicModel
 end
 
 function FOSMathProgModel(s::FOSAlgorithm; kwargs...)
-    FOSMathProgModel(0, 0, ConeProduct(), ConeProduct(), spzeros(0, 0),
+    FOSMathProgModel(0, 0, SlicedSeparableSum([],[]), SlicedSeparableSum([],[]), spzeros(0, 0),
                      Float64[], Float64[], s, FOSSolverDataPlaceholder(), :NotSolved,
                      0.0, Float64[], Float64[], Float64[], Dict{Symbol,Any}(kwargs), -1,
                      x -> error("No status generator defined"), UInt64(1), ValueHistories.MVHistory())
