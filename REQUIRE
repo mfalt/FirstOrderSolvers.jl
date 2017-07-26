@@ -3,5 +3,3 @@ MathProgBase
 ValueHistories
 ProximalOperators 0.4.2
 SugarBLAS
-IterativeSolvers
-Optim

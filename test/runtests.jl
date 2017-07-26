@@ -1,6 +1,10 @@
 using FirstOrderSolvers
 using Base.Test
 
+
+info("Test: testlbfgs.jl")
+include("testlbfgs.jl")
+
 info("Test: conjugateGradient.jl")
 include("conjugateGradient.jl")
 

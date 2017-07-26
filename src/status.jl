@@ -72,6 +72,10 @@ function checkstatus(::NoStatus, z)
     return false
 end
 
+isdone(stat::AbstractStatus) = error("isdone not implemented for type $(typeof(stat))")
+isdone(stat::Status) = stat.status != :Continue
+isdone(::NoStatus) = false
+
 printstatusheader(::NoStatus) = nothing
 
 function printstatusheader(stat::Status)

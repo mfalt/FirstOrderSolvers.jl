@@ -1,10 +1,11 @@
-export GAP, GAPA, GAPP,  DR, AP, Dykstra, FISTA
+export GAP, GAPA, GAPP,  DR, AP, Dykstra, FISTA, SuperMann
 
 include("gap.jl")
 include("gapa.jl")
 include("gapproj.jl")
 include("dykstra.jl")
 include("fista.jl")
+include("supermann.jl")
 
 #Some shortnames for common algorithms
 DR(α=0.5; kwargs...) = GAP(α, 2.0, 2.0; kwargs...)
