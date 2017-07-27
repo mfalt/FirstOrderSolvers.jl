@@ -1,27 +1,40 @@
 using FirstOrderSolvers
 using Base.Test
 
+@testset "Tests:" begin
+    @testset "testlbfgs.jl" begin
+        include("testlbfgs.jl")
+    end
 
-info("Test: testlbfgs.jl")
-include("testlbfgs.jl")
+    @testset "conjugateGradient.jl" begin
+        include("conjugateGradient.jl")
+    end
 
-info("Test: conjugateGradient.jl")
-include("conjugateGradient.jl")
+    @testset "HSDEAffine.jl" begin
+        include("HSDEAffine.jl")
+    end
 
-info("Test: HSDEAffine.jl")
-include("HSDEAffine.jl")
+    @testset "affinepluslinear.jl" begin
+        include("affinepluslinear.jl")
+    end
 
-info("Test: affinepluslinear.jl")
-include("affinepluslinear.jl")
+    @testset "testDRandGAPA.jl" begin
+        include("testDRandGAPA.jl")
+    end
 
-info("Test: testDRandGAPA.jl")
-include("testDRandGAPA.jl")
+    @testset "testsupermann.jl" begin
+        include("testDRandGAPA.jl")
+    end
 
-info("Test: testPSD.jl")
-include("testPSD.jl")
+    @testset "testPSD.jl" begin
+        include("testPSD.jl")
+    end
 
-info("Test: testprint.jl")
-include("testprint.jl")
+    @testset "testprint.jl" begin
+        include("testprint.jl")
+    end
 
-info("Test: testconvex.jl")
-include("testconvex.jl")
+    @testset "testconvex.jl" begin
+        include("testconvex.jl")
+    end
+end
