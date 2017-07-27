@@ -16,7 +16,7 @@ type SuperMann <: FOSAlgorithm
     options
 end
 
-function SuperMann(c0=0., c1=0.99, q=0.99, β=0.5, σ=0.01, λ=2.0, nstore = 30; direct=false, kwargs...)
+function SuperMann(c0=0., c1=0.999, q=0.999, β=0.5, σ=0.001, λ=0.5, nstore = 30; direct=false, kwargs...)
     α = 0.5 #TODO
     SuperMann(α,c0,c1,q,β,σ,λ,nstore,direct,kwargs)
 end
@@ -85,11 +85,9 @@ function Base.step(alg::SuperMann, data::SuperMannData, x, i, status::AbstractSt
         rsafe = normRx
         data.η.x = normRx
     end
-    set_x_∇f!(x, Rx, lbfgs)             # Update the lbfgs to remember these values
-
 
     #Calculate newton direction d:
-    copy!(d,Rx)    # d .= Rx
+    d .= -Rx
     H∇f!(d, lbfgs) # d .= H*d             # Step 2
 
     if normRx <= c0*data.η.x            # Step 3
@@ -103,12 +101,14 @@ function Base.step(alg::SuperMann, data::SuperMannData, x, i, status::AbstractSt
             R!(Rw, w, alg, data, i, NoStatus(:no)) #Rw = R(w)
             normRw = norm(Rw)
             if normRx <= rsafe && normRw <= c1*normRx
+                set_s_y!(w, x, Rw, Rx, lbfgs)
                 x .= w                  # Step 5a
                 rsafe = normRx + q^i    # Step 5a
                 break                   # Go to step 6
             else
                 ρk = normRw^2 - 2α*sum(Rw.*(w.-x)) #dot(Rw, w-x)
                 if ρk >= σ*normRw*normRx
+                    set_s_y!(w, x, Rw, Rx, lbfgs)
                     scal = λ*ρk/normRw^2
                     x .= x .- scal.*Rw  # Step 5b
                     break

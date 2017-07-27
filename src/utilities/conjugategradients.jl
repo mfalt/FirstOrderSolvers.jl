@@ -41,7 +41,8 @@ function conjugategradient!(x,A,b,r,p,Ap; tol = size(A,2)*eps(), max_iters = 100
         α = rn/dot(Ap,p)
         @blas! x += α*p
         @blas! r -= α*Ap
-        if norm(r) <= tol || iter >= max_iters
+        #TODO reconsider lower limit
+        if iter > 10 && (norm(r) <= tol || iter >= max_iters)
             break
         end
         rnold = rn

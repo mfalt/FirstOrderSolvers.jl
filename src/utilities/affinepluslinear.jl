@@ -106,6 +106,7 @@ function prox!(y::AbstractArray, S::AffinePlusLinear, x::AbstractArray)
     y .= cgdata.xinit
     #Now run CG
     tol = if S.decreasing_accuracy
+        #TODO Better decreasing acc for fast converging algorithms
         max(0.2^sqrt(S.i), size(S.A,2)*eps())
     else
         size(S.A,2)*eps()

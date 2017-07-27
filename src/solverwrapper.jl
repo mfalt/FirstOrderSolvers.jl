@@ -19,6 +19,7 @@ function solve!(model::FOSMathProgModel)
     #TODO general status
     status = model.status_generator(model, checki, eps, verbose, debug)
     guess = iterate(model.alg, model.data, status, x, max_iters)
+    model.enditr = status.i
     sol = populate_solution(model, model.alg, model.data, guess, status)
     return sol
 end

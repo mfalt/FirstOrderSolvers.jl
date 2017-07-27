@@ -39,6 +39,7 @@ LBFGSstate(m,n; usegamma=true) = LBFGSstate(zeros(m,n), zeros(m,n), zeros(n),
 set_x_∇f!(x, g, state::LBFGSstate)
 
 Update LBFGSstate with new value x=x^{k+1} and g = ∇f(x^{k+1})
+Will update `s` and `y` with `x^{k+1}-x^{k}` and `∇f(x^{k+1})-∇f(x^{k})`
 """
 function set_x_∇f!(x, g, state::LBFGSstate)
     @assert length(x) == length(state.xold)
@@ -51,6 +52,36 @@ function set_x_∇f!(x, g, state::LBFGSstate)
     copy!(state.xold, x)
     copy!(state.gold, g)
     tmp = vdot(state.s,state.y,k) #tmp = s[:,k]'y[:,k]'
+    state.ρ[k] = 1/tmp
+    state.j.x = j + 1
+
+    if state.usegamma
+        tmp = vdot(state.s,state.y,k)/vdot(state.y,state.y,k)
+
+        if tmp < 1e6 && tmp > -1e6 #Some safety check
+            state.γ.x = tmp
+        end
+        #println(state.γ.x)
+    end
+    return
+end
+
+"""
+`set_s_y!(x2, x1, g2, g1, state::LBFGSstate)``
+
+Update LBFGSstate with new vectors `s = x2 - x1` and `y = g2 - g1`
+"""
+function set_s_y!(x2, x1, g2, g1, state::LBFGSstate)
+    @assert length(x2) == size(state.s,1)
+    @assert length(x1) == size(state.s,1)
+    @assert length(g1) == size(state.s,1)
+    @assert length(g2) == size(state.s,1)
+
+    j = state.j.x
+    k = mod(j-1,state.n)+1
+    state.s[:,k] .= x2 .- x1   # x_{k+1}) - x_{k}
+    state.y[:,k] .= g2 .- g1   # ∇f(x_{k+1}) - ∇f(x_{k})
+    tmp = vdot(state.s,state.y,k) #tmp = s[:,k]'y[:,k]
     state.ρ[k] = 1/tmp
     state.j.x = j + 1
 
@@ -92,7 +123,7 @@ Calculate q .= Hk*q given the LBFGSstate
 """
 function H∇f!(q, state::LBFGSstate)
     s,y,α,ρ,n,j = state.s,state.y,state.α,state.ρ,state.n,state.j.x
-    @assert length(q) == length(state.xold)
+    @assert length(q) == size(state.s,1)
     #Backwards
     @inbounds for i = (n+j-1):-1:j
         k = mod(i-1,n)+1
