@@ -24,7 +24,7 @@ using Base.Test
     end
     info("Test: testsupermann.jl")
     @testset "testsupermann.jl" begin
-        include("testDRandGAPA.jl")
+        include("testsupermann.jl")
     end
     info("Test: testPSD.jl")
     @testset "testPSD.jl" begin

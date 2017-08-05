@@ -28,4 +28,4 @@ solve!(problem,s)
 @test problem.status == :Optimal
 @test problem.optval ≈ opt rtol=10ϵ
 @test abs(minimum(x.value)) < 10*ϵ
-@test problem.model.enditr < 1000
+@test problem.model.enditr < 2000
