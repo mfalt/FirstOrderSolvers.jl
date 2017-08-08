@@ -5,7 +5,7 @@ A = sprandn(m, n,0.02); b = randn(m, 1)
 x = Variable(n)
 problem = minimize(sumsquares(A * x - b), [x >= 0])
 
-ϵ = 1e-12
+ϵ = 1e-11
 opt = 219.14056391716127
 s = DR(direct=true, checki=100, max_iters=120000, eps=ϵ)
 solve!(problem,s)
@@ -20,7 +20,7 @@ solve!(problem,s)
 @test problem.status == :Optimal
 @test problem.optval ≈ opt rtol=10ϵ
 @test abs(minimum(x.value)) < 10*ϵ
-@test problem.model.enditr < 1000
+@test problem.model.enditr < 1200
 
 s = SuperMann(direct=false, checki=100, max_iters=10000, eps=ϵ)
 solve!(problem,s)
@@ -28,4 +28,4 @@ solve!(problem,s)
 @test problem.status == :Optimal
 @test problem.optval ≈ opt rtol=10ϵ
 @test abs(minimum(x.value)) < 10*ϵ
-@test problem.model.enditr < 2000
+@test problem.model.enditr < 1200

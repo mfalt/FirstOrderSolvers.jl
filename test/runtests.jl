@@ -10,6 +10,10 @@ using Base.Test
     @testset "conjugateGradient.jl" begin
         include("conjugateGradient.jl")
     end
+    info("Test: testcraigmr.jl")
+    @testset "testcraigmr.jl" begin
+        include("testcraigmr.jl")
+    end
     info("Test: HSDEAffine.jl")
     @testset "HSDEAffine.jl" begin
         include("HSDEAffine.jl")
