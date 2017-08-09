@@ -22,6 +22,16 @@ status(m::FOSMathProgModel) = m.solve_stat
 getobjval(m::FOSMathProgModel) = m.obj_val
 getsolution(m::FOSMathProgModel) = copy(m.primal_sol)
 
+""" Convert vector [i,i+1,...,i+n] to 1:(1+n) """
+function vec2range(v::AbstractArray)
+    r = v[1]:v[end]
+    if !all(r .== v)
+        error("Unknown set of indices $v in loadproblem!")
+    end
+    return r
+end
+vec2range(v::UnitRange) = v
+
 function loadproblem!(model::FOSMathProgModel, c, A, b, constr_cones, var_cones)
     loadproblem!(model, c, sparse(A), b, constr_cones, var_cones)
 end
@@ -30,7 +40,8 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     t1 = time_ns()
     model.input_numconstr = size(A,1)
     model.input_numvar = size(A,2)
-
+    println(constr_cones)
+    println(var_cones)
     # Verify only good cones
     for cone_vars in constr_cones
         cone_vars[1] in badcones && error("Cone type $(cone_vars[1]) not supported")
@@ -40,11 +51,11 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     end
 
     conesK1 = [conemap[t[1]] for t in constr_cones]
-    indexK1 = [(t[2],) for t in constr_cones]
+    indexK1 = [(vec2range(t[2]),) for t in constr_cones]
     model.K1 = SlicedSeparableSum(conesK1, indexK1)
 
     conesK2 = [conemap[t[1]] for t in var_cones]
-    indexK2 = [(t[2],) for t in var_cones]
+    indexK2 = [(vec2range(t[2]),) for t in var_cones]
     model.K2 = SlicedSeparableSum(conesK2, indexK2)
 
     model.A = A
