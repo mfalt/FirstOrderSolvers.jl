@@ -40,8 +40,6 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     t1 = time_ns()
     model.input_numconstr = size(A,1)
     model.input_numvar = size(A,2)
-    println(constr_cones)
-    println(var_cones)
     # Verify only good cones
     for cone_vars in constr_cones
         cone_vars[1] in badcones && error("Cone type $(cone_vars[1]) not supported")
