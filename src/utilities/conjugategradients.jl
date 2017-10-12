@@ -17,8 +17,8 @@ function conjugategradient!(x,A,b; useasinitial=true)
     if !useasinitial
         x .= 1.0
     end
-    conjugategradient!(x, A, b, cgdata.r, cgdata.p, cgdata.z)
-    return cgdata
+    i = conjugategradient!(x, A, b, cgdata.r, cgdata.p, cgdata.z)
+    return cgdata, i
 end
 
 """

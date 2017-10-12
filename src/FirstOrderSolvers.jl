@@ -14,6 +14,7 @@ include("status.jl")
 include("utilities/conjugategradients.jl")
 include("utilities/affinepluslinear.jl")
 include("utilities/lbfgs.jl")
+include("utilities/indLDLt.jl")
 
 #Problem forms
 include("problemforms/HSDE.jl")
