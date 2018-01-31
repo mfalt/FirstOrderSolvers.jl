@@ -39,3 +39,18 @@ solve!(problem, GAPA(0.5, 0.9, eps=1e-9, verbose=0))
 @test problem.status == :Optimal
 @test abs((problem.optval - opt)/opt) < 1e-10
 @test maximum(abs.(x.value-xsave)) < 1e-7
+
+# Test with LongStepWrapper
+problem = minimize(sumsquares(A * x - b), [x >= 0])
+solve!(problem, LongstepWrapper(GAPA(0.5,0.9, eps=1e-9, direct=false, verbose=0), longinterval=1000))
+
+@test problem.status == :Optimal
+@test abs((problem.optval - opt)/opt) < 1e-8
+@test maximum(abs.(x.value-xsave)) < 1e-7
+
+problem = minimize(sumsquares(A * x - b), [x >= 0])
+solve!(problem, LongstepWrapper(GAPA(0.5,0.9, eps=1e-9, direct=true, verbose=0), longinterval=1000))
+
+@test problem.status == :Optimal
+@test abs((problem.optval - opt)/opt) < 1e-8
+@test maximum(abs.(x.value-xsave)) < 1e-7

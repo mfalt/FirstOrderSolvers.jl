@@ -2,6 +2,9 @@ export LongstepWrapper
 
 include("saveplanes.jl")
 
+""" LongstepWrapper{T}(alg::T; longinterval=100, nsave=10, kwargs...)
+
+"""
 type LongstepWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
     longinterval::Int64
     nsave::Int64
@@ -27,7 +30,7 @@ end
 
 function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
     alg, longinterval, nsave = long.alg, long.longinterval, long.nsave
-    !support_longstep(alg) && error("Algorithm alg does not support longstep")
+    !support_longstep(alg) && error("Algorithm $alg does not support LongstepWrapper")
     data, status_generator =  init_algorithm!(alg, model)
     neq, nineq = projections_per_step(alg)
     #TODO x
@@ -38,6 +41,7 @@ function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
 end
 
 getmn(data::LongstepWrapperData) = getmn(data.algdata)
+getcgiter(data::LongstepWrapperData) = getcgiter(data.algdata)
 
 function Base.step(wrap::LongstepWrapper, longstep::LongstepWrapperData, x, i, status::AbstractStatus)
     nsave, longinterval = longstep.nsave, longstep.longinterval

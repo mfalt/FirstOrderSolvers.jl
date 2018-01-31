@@ -35,23 +35,65 @@
 #   xy .= f.F \ f.tmp #note here f.tmp which is m+n array
 #   return 0.0
 # end
-using SparseLDLT
+# using SparseLDLT
+#
+# struct IndGraphSparse3{T <: ProximalOperators.RealOrComplex, Ti} <: ProximableFunction
+#   m::Int
+#   n::Int
+#   A::SparseMatrixCSC{T, Ti}
+#   F::SparseLDLT.LDLFactor#LDL factorization
+#
+#   tmp::Array{T, 1}
+#   tmpx::SubArray{T, 1, Array{T, 1}, Tuple{UnitRange{Int64}}, true}
+# end
+#
+# function IndGraphSparse3{T,Ti}(A::SparseMatrixCSC{T,Ti})
+#   m, n = size(A)
+#   K = [speye(n) A'; A -speye(m)]
+#
+#   F = SparseLDLT.ldltfact(K)
+#
+#   tmp = Array{T,1}(m + n)
+#   tmpx = view(tmp, 1:n)
+#   tmpy = view(tmp, (n + 1):(n + m)) #second part is always zeros
+#   fill!(tmpy, 0)
+#
+#   res = Array{T,1}(m + n)
+#   return IndGraphSparse3{T,Ti}(m, n, A, F, tmp, tmpx)
+# end
+#
+# function prox!{T}(
+#     xy::AbstractVector{T},
+#     f::IndGraphSparse3,
+#     cd::AbstractVector{T}
+#   )
+#   #instead of res = [c + f.A' * d; zeros(f.m)]
+#   At_mul_B!(f.tmpx, f.A, view(cd, (1+f.n):(f.n+f.m)))
+#   f.tmpx .+= view(cd, 1:f.n)
+#   # A_ldiv_B!(f.res, f.F, f.tmp) #is not working
+#   #xy .= f.F \ f.tmp #note here f.tmp which is m+n array
+#   A_ldiv_B!(xy, f.F, f.tmp)
+#   return 0.0
+# end
 
-struct IndGraphSparse3{T <: ProximalOperators.RealOrComplex, Ti} <: ProximableFunction
+import Base.SparseArrays.CHOLMOD: Factor
+using CholmodSolve2
+# TODO make complex work in CholmodSolve2 so T<:RealOrComplex{Float64}
+struct IndGraphSparseCholmod{T <: Float64, Ti} <: ProximableFunction
   m::Int
   n::Int
   A::SparseMatrixCSC{T, Ti}
-  F::SparseLDLT.LDLFactor#LDL factorization
+  F::Factor{T} #LDLt factorization
 
   tmp::Array{T, 1}
   tmpx::SubArray{T, 1, Array{T, 1}, Tuple{UnitRange{Int64}}, true}
 end
 
-function IndGraphSparse3{T,Ti}(A::SparseMatrixCSC{T,Ti})
+function IndGraphSparseCholmod{T,Ti}(A::SparseMatrixCSC{T,Ti})
   m, n = size(A)
   K = [speye(n) A'; A -speye(m)]
 
-  F = SparseLDLT.ldltfact(K)
+  F = ldltfact(K)
 
   tmp = Array{T,1}(m + n)
   tmpx = view(tmp, 1:n)
@@ -59,12 +101,12 @@ function IndGraphSparse3{T,Ti}(A::SparseMatrixCSC{T,Ti})
   fill!(tmpy, 0)
 
   res = Array{T,1}(m + n)
-  return IndGraphSparse3{T,Ti}(m, n, A, F, tmp, tmpx)
+  return IndGraphSparseCholmod{T,Ti}(m, n, A, F, tmp, tmpx)
 end
 
 function prox!{T}(
     xy::AbstractVector{T},
-    f::IndGraphSparse3,
+    f::IndGraphSparseCholmod,
     cd::AbstractVector{T}
   )
   #instead of res = [c + f.A' * d; zeros(f.m)]

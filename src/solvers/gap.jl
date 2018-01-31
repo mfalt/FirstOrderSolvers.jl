@@ -1,6 +1,5 @@
 
-"""
-GAP
+""" GAP(α=0.8, α1=1.8, α2=1.8; direct=false, kwargs...)
 
 """
 type GAP <: FOSAlgorithm

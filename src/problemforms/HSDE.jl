@@ -13,7 +13,8 @@ function HSDE(model::FOSMathProgModel; direct=false)
                 -model.A      spzeros(m,m)  model.b;
                 -model.c'     -model.b'     0      ]
             #IndAffine([Q -speye(size(Q,1))], zeros(size(Q,1)))
-            IndGraphSparse3(Q)
+            #IndGraphSparse3(Q)
+            IndGraphSparseCholmod(Q)
         else
             Q = HSDEMatrixQ(model.A, model.b, model.c)
             # Q = [spzeros(n,n) model.A'      model.c;
