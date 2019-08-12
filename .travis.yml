@@ -1,23 +1,24 @@
-# Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
+
 os:
   - linux
   - osx
+
 julia:
-  - 0.6
+  - 1.0
+  - 1.1
   - nightly
+
 matrix:
+  fast_finish: true
   allow_failures:
   - julia: nightly
+
 notifications:
   email: false
-# uncomment the following lines to override the default test script
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone("https://github.com/JuliaOpt/Convex.jl.git");'
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("FirstOrderSolvers"); Pkg.test("FirstOrderSolvers"; coverage=true)'
+
+before_install:
+  - julia -e 'using Pkg; Pkg.develop(PackageSpec(url="https://github.com/mfalt/QPDAS.jl.git"))'
+
 after_success:
-  # push coverage results to Coveralls
-  - julia -e 'cd(Pkg.dir("FirstOrderSolvers")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
-  # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("FirstOrderSolvers")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; cd(Pkg.dir("FirstOrderSolvers")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
