@@ -1,4 +1,6 @@
-using MathProgBase.SolverInterface
+import MathProgBase.SolverInterface: ConicModel, LinearQuadraticModel,
+    optimize!, status, getobjval, getsolution, loadproblem!,
+    numvar, numconstr, supportedcones
 
 ConicModel(s::FOSAlgorithm) = FOSMathProgModel(s; s.options...)
 LinearQuadraticModel(s::FOSAlgorithm) = ConicToLPQPBridge(ConicModel(s))

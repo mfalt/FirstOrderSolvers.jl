@@ -128,12 +128,14 @@ end
 
 @generated function savedata(i, p, d, g, ctx, bty, κ, τ, x, y, s, t, model, debug)
     ex = :(history = model.history)
-    for v in  [:p, :d, :g, :ctx, :bty, :κ, :τ, :t]
-        ex = :($ex ; push!(history, $(parse(":$v")), i, $v))
+    for (v,vs) in [(:p, ":p"), (:d, ":d"), (:g, ":g"),
+                   (:ctx, ":ctx"), (:bty, ":bty"), (:κ, ":κ"),
+                   (:τ, ":τ"), (:t, ":t")]
+        ex = :($ex ; push!(history, Symbol($vs), i, $v))
     end
     ex2 = :()
-    for v in [:x,:y,:s]
-        ex2 = :($ex2 ; push!(history, $(parse(":$v")), i, copy($v)))
+    for (v,vs) in [(:x, ":x"), (:y,":y"), (:s,":s")]
+        ex2 = :($ex2 ; push!(history, Symbol($vs), i, $v))
     end
     ex = :($ex; if debug > 1; $ex2; end)
     ex = :($ex; return)

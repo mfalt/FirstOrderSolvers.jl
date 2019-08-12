@@ -16,8 +16,8 @@ function getQ1Q2(A)
 end
 
 function getHSDEMatrix(Q1,Q2)
-    M1 = [speye(size(Q1)...) Q1'                ;
-          Q1                 -speye(size(Q1)...)]
+    M1 = [I           sparse(Q1') ;
+          sparse(Q1)  -I          ]
     M2 = HSDEMatrix(Q2)
     return M1, M2
 end
@@ -68,7 +68,7 @@ function testHSDE(A, m, n)
     testHSDEMatrix_A_mul_B(M1, M2, m, n)
 
     b = randn(size(M2)[1])
-    S1 = IndAffine([Q1 -speye(size(Q1,1))], zeros(size(Q1,1)))
+    S1 = IndAffine([sparse(Q1) -I], zeros(size(Q1,1)))
     y1 = similar(b)
     y2 = similar(b)
     FirstOrderSolvers.prox!(y2, M2, b)

@@ -49,7 +49,7 @@ KKTMatrix(A::M) where {T, M<:AbstractMatrix{T}} = KKTMatrix{T,M}(A, size(A)...)#
 end
 
 #Assuming we don't introduce scaling ρ
-mul!(y::AbstractVector{T}, M::Transpose{KKTMatrix}, x::AbstractVector{T}) where T = mul!(y, M, x)
+mul!(y::AbstractVector{T}, M::Transpose{T, MType}, x::AbstractVector{T}) where {T, MType<:KKTMatrix} = mul!(y, M.parent, x)
 
 """
 Representation of the function `f([x;z]) = q'x+i(Ax-βz==b)`
@@ -72,7 +72,7 @@ function AffinePlusLinear(A::M, b, q, β; decreasing_accuracy=false) where {T,M<
     am, an = size(A)
     @assert β == 1 || β == -1
     #Initiate second half of rhs, maybe without view?
-    rhs = Array{T}(am+an)
+    rhs = Array{T}(undef, am+an)
     rhs2 = view(rhs, (1+an):(am+an))
     rhs2 .= b
     return AffinePlusLinear{T,M}(KKTMatrix(A), A, β, b, q, rhs, decreasing_accuracy, 1, 0, CGdata(length(rhs)))
@@ -91,7 +91,7 @@ function prox!(y::AbstractArray, S::AffinePlusLinear, x::AbstractArray)
     y2   = view(y,     (an+1):(an+am))
     #Build rhs, rhs2 already contains b
     β = S.β
-    At_mul_B!(rhs1, S.A, x2)
+    mul!(rhs1, transpose(S.A), x2)
     rhs1 .= β.*rhs1 .+ x1 .- S.q
     #Now rhs = [x-q+β*A'z; b]
 

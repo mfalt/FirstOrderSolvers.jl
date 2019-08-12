@@ -55,8 +55,8 @@ function mul!(Y::AbstractArray{T,1}, Q::HSDEMatrixQ{T,M,V}, B::AbstractArray{T,1
     return Y
 end
 
-function mul!(Y::AbstractArray{T,1}, Q::Transpose{QMat}, B::AbstractArray{T,1}) where {T, M<:AbstractArray{T,2},V<:AbstractArray{T,1}, QMat<:HSDEMatrixQ{T,M,V}}
-    mul!(Y,Q,B)
+function mul!(Y::AbstractArray{T,1}, Q::Transpose{T, QMat}, B::AbstractArray{T,1}) where {T, M<:AbstractArray{T,2},V<:AbstractArray{T,1}, QMat<:HSDEMatrixQ{T,M,V}}
+    mul!(Y,Q.parent,B)
     Y .= .-Y
     return Y
 end
@@ -137,5 +137,5 @@ function mul!(Y::AbstractArray{T,1}, M::HSDEMatrix{T,QType}, B::AbstractArray{T,
     return Y
 end
 
-mul!(Y::AbstractArray{T,1}, Q::Transpose{QMat}, B::AbstractArray{T,1}) where {T, QType<:AbstractMatrix{T}, QMat<:HSDEMatrix{T,QType}} =
-    mul!(Y, Q, B)
+mul!(Y::AbstractArray{T,1}, Q::Transpose{T, QMat}, B::AbstractArray{T,1}) where {T, QType<:AbstractMatrix{T}, QMat<:HSDEMatrix{T,QType}} =
+    mul!(Y, Q.parent, B)

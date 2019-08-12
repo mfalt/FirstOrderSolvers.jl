@@ -25,7 +25,7 @@ end
 
 
 function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
-    tic()
+    t1 = time()
     printstatusheader(status)
     for i = 1:max_iters
         status.i = i
@@ -41,7 +41,8 @@ function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
     end
     if status.verbose > 0
         println("Time for iterations: ")
-        toc()
+        t2 = time()
+        println("$(t2-t1) s")
     end
     return guess
 end
