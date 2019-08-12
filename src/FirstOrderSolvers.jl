@@ -1,9 +1,13 @@
-__precompile__()
+#__precompile__()
 
 module FirstOrderSolvers
 
 using ProximalOperators
+using SparseArrays
+using Printf
 import ValueHistories
+import LinearAlgebra: mul!, Transpose, dot, norm
+
 
 include("cones.jl")
 include("types.jl")

@@ -1,12 +1,12 @@
 export LineSearchWrapper
 
-type LineSearchWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
+mutable struct LineSearchWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
     lsinterval::Int64
     alg::T
     options
 end
 
-type LineSearchWrapperData{T<:FOSSolverData} <: FOSSolverData
+mutable struct LineSearchWrapperData{T<:FOSSolverData} <: FOSSolverData
     lsinterval::Int64
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
@@ -16,9 +16,9 @@ type LineSearchWrapperData{T<:FOSSolverData} <: FOSSolverData
     algdata::T
 end
 
-function LineSearchWrapper{T}(alg::T; lsinterval=100, kwargs...)
+function LineSearchWrapper(alg::T; lsinterval=100, kwargs...) where T
     if support_linesearch(alg) == Val{:False}
-        error("Algorithm $T does not support line search")
+        @error "Algorithm $T does not support line search"
     end
     LineSearchWrapper{T}(lsinterval, alg, [kwargs;alg.options])
 end
@@ -74,7 +74,7 @@ function Base.step(wrap::LineSearchWrapper, lsdata::LineSearchWrapperData, x, i,
     end
 end
 
-function normdiff{T<:StridedVector}(x::T,y::T)
+function normdiff(x::T,y::T) where T<:StridedVector
     nx, ny = length(x), length(y)
     s = 0.0
     @assert nx == ny

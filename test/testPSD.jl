@@ -1,4 +1,4 @@
-using Convex, FirstOrderSolvers, SCS, Base.Test, ProximalOperators
+using Convex, FirstOrderSolvers, SCS, Test, ProximalOperators
 
 ys = [-0.0064709 -0.22443;
      -0.22443    -1.02411]

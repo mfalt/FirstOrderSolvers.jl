@@ -1,4 +1,4 @@
-type HSDE{T1<:ProximableFunction,T2<:DualConeProduct}
+mutable struct HSDE{T1<:ProximableFunction,T2<:DualConeProduct}
     indAffine::T1
     indCones::T2
     n::Int64

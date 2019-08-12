@@ -1,6 +1,6 @@
 
 #Type to store n linear equalities + 1 pair of linear equalities
-type SavedPlanes{T}
+mutable struct SavedPlanes{T}
     A::Array{T,2}
     b::Array{T,1}
     n::Int64
@@ -8,7 +8,7 @@ type SavedPlanes{T}
     nineq::Int64
 end
 
-function projectonnormals!{T}(s::SavedPlanes{T},x,y)
+function projectonnormals!(s::SavedPlanes{T},x,y) where T
     n = length(x)
     m = length(s.b)
     #println(s.A)
@@ -23,7 +23,7 @@ function projectonnormals!{T}(s::SavedPlanes{T},x,y)
     end
     tmp = copy(s.b)
     # tmp = -Ax+b
-    Base.LinAlg.gemv!('N', -one(T), s.A, x, one(T), tmp)
+    LinearAlgebra.gemv!('N', -one(T), s.A, x, one(T), tmp)
     # tmp = (AA')⁻¹*(-Ax+b)
     try
         A_ldiv_B!(AAtF,tmp)
@@ -40,7 +40,7 @@ function projectonnormals!{T}(s::SavedPlanes{T},x,y)
     return false
 end
 
-function SavedPlanes{T}(x::AbstractVector{T}, n::Int, neq, nineq)
+function SavedPlanes(x::AbstractVector{T}, n::Int, neq, nineq) where T
     total = (n+1)*neq+nineq #Save all eq and last ineq
     SavedPlanes{T}(similar(x,total, length(x)), similar(x,total), n, neq, nineq)
 end

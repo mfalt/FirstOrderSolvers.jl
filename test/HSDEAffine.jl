@@ -1,5 +1,6 @@
 using FirstOrderSolvers: HSDEMatrixQ, HSDEMatrix
 using ProximalOperators: IndAffine, prox!
+import LinearAlgebra: mul!
 
 function getQ1Q2(A)
     m, n = size(A)
@@ -27,14 +28,14 @@ function testHSDEQ_A_mul_B(Q1, Q2, m, n)
 
     y1, y2 = randn(m+n+1), randn(m+n+1)
 
-    A_mul_B!(y1, Q1, rhs1)
-    A_mul_B!(y2, Q2, rhs2)
+    mul!(y1, Q1, rhs1)
+    mul!(y2, Q2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
 
-    At_mul_B!(y1, Q1, rhs1)
-    At_mul_B!(y2, Q2, rhs2)
+    mul!(y1, transpose(Q1), rhs1)
+    mul!(y2, transpose(Q2), rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
@@ -46,14 +47,14 @@ function testHSDEMatrix_A_mul_B(M1, M2, m, n)
 
     y1, y2 = randn(2m+2n+2), randn(2m+2n+2)
 
-    A_mul_B!(y1, M1, rhs1)
-    A_mul_B!(y2, M2, rhs2)
+    mul!(y1, M1, rhs1)
+    mul!(y2, M2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
 
-    At_mul_B!(y1, M1, rhs1)
-    At_mul_B!(y2, M2, rhs2)
+    mul!(y1, transpose(M1), rhs1)
+    mul!(y2, transpose(M2), rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
@@ -79,7 +80,7 @@ function testHSDE(A, m, n)
     @test y2 ≈ y3
 end
 
-srand(1)
+Random.seed!(1)
 ma,na = 10,20
 A = randn(10*ma,10*na)
 testHSDE(A, size(A)...)

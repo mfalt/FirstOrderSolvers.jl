@@ -1,6 +1,6 @@
 using FirstOrderSolvers: conjugategradient!, CGdata
 
-srand(2)
+Random.seed!(2)
 # a = randn(1000,1000)
 # A = a'a
 A = rand(1000,1000)

@@ -2,6 +2,11 @@ julia 0.6
 MathProgBase
 ValueHistories
 ProximalOperators 0.4.2
-SugarBLAS
 IterativeSolvers
 Optim
+#SparseArrays
+#Printf
+#LinearAlgebra
+
+
+#Test

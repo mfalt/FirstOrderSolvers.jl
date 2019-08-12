@@ -1,4 +1,4 @@
-importall MathProgBase.SolverInterface
+using MathProgBase.SolverInterface
 
 ConicModel(s::FOSAlgorithm) = FOSMathProgModel(s; s.options...)
 LinearQuadraticModel(s::FOSAlgorithm) = ConicToLPQPBridge(ConicModel(s))
@@ -33,10 +33,10 @@ function loadproblem!(model::FOSMathProgModel, c, A::SparseMatrixCSC, b, constr_
 
     # Verify only good cones
     for cone_vars in constr_cones
-        cone_vars[1] in badcones && error("Cone type $(cone_vars[1]) not supported")
+        cone_vars[1] in badcones && @error "Cone type $(cone_vars[1]) not supported"
     end
     for cone_vars in var_cones
-        cone_vars[1] in badcones && error("Cone type $(cone_vars[1]) not supported")
+        cone_vars[1] in badcones && @error "Cone type $(cone_vars[1]) not supported"
     end
 
     conesK1 = tuple([conemap[t[1]] for t in constr_cones]...)

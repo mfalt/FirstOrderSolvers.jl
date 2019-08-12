@@ -1,6 +1,6 @@
 import ValueHistories: push!
 
-type Status <: AbstractStatus
+mutable struct Status <: AbstractStatus
     m::Int64
     n::Int64
     i::Int64

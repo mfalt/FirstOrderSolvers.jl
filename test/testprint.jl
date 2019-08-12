@@ -18,7 +18,7 @@ o2  = "   100|"
 o3  = "   200|"
 o4  = "Found solution i=200"
 
-srand(10)
+Random.seed!(10)
 n = 500
 A = sprandn(n, 2n, 0.1)
 x̄ = randn(2n)

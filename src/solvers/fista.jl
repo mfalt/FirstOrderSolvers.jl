@@ -3,14 +3,14 @@
 FISTA
 
 """
-type FISTA <: FOSAlgorithm
+mutable struct FISTA <: FOSAlgorithm
     α::Float64
     direct::Bool
     options
 end
 FISTA(α=1.0; direct=false, kwargs...) = FISTA(α, direct, kwargs)
 
-immutable FISTAData{T1,T2} <: FOSSolverData
+struct FISTAData{T1,T2} <: FOSSolverData
     t::Base.RefValue{Float64}
     y::Array{Float64,1}
     xold::Array{Float64,1}
@@ -21,7 +21,7 @@ end
 
 function init_algorithm!(alg::FISTA, model::FOSMathProgModel)
     hsde, status_generator = HSDE(model, direct=alg.direct)  #Is zeros OK?
-    data = FISTAData(Ref(1.0), zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+    data = FISTAData(Ref(1.0), zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(undef, hsde.n), hsde.indAffine, hsde.indCones)
     return data, status_generator
 end
 
