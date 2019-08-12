@@ -19,16 +19,19 @@ end
 
 Base.size(Q::HSDEMatrixQ) = (Q.am+Q.an+1, Q.am+Q.an+1)
 
-function show(io::IO, Q::T) where {T<:HSDEMatrixQ}
+# Fallback, to have both defined
+Base.show(io::IO, mt::MIME"text/plain", Q::T) where {T<:HSDEMatrixQ} = Base.show(io, Q)
+
+function Base.show(io::IO, Q::T) where {T<:HSDEMatrixQ}
     m,n = size(Q)
     println(io, "$(m)x$(m) $T:")
     println(io, "[0   A'  c;\n -A  0   b;\n -c' -b' 0]")
     println(io,"where A:")
-    show(io, Q.A)
+    Base.show(io, Q.A)
     println(io,"\nb:")
-    show(io, Q.b)
+    Base.show(io, Q.b)
     println(io,"\nc:")
-    show(io, Q.c)
+    Base.show(io, Q.c)
 end
 
 # Q of size
@@ -85,12 +88,15 @@ function Base.size(M::HSDEMatrix)
     return (2m,2m)
 end
 
-function show(io::IO, M::T) where {T<:HSDEMatrix}
+# Try fallback
+Base.show(io::IO, mt::MIME"text/plain", M::T) where {T<:HSDEMatrix} = Base.show(io, M)
+
+function Base.show(io::IO, M::T) where {T<:HSDEMatrix}
     m,n = size(M)
     println(io, "$(m)x$(m) $T:")
     println(io, "[I  Q';\n Q -I]")
     println(io,"where Q:")
-    show(io, M.Q)
+    Base.show(io, M.Q)
 end
 
 """

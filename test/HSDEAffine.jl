@@ -1,4 +1,5 @@
 using FirstOrderSolvers: HSDEMatrixQ, HSDEMatrix
+using SparseArrays
 using ProximalOperators: IndAffine, prox!
 import LinearAlgebra: mul!
 

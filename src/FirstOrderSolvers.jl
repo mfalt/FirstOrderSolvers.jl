@@ -6,6 +6,7 @@ using ProximalOperators
 using SparseArrays
 using Printf
 import ValueHistories
+using LinearAlgebra
 import LinearAlgebra: mul!, Transpose, dot, norm
 
 

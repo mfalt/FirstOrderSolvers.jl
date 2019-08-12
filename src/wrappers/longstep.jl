@@ -22,7 +22,7 @@ mutable struct LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
 end
 
 function LongstepWrapper(alg::T; longinterval=100, nsave=10, kwargs...) where T
-    LongstepWrapper{T}(longinterval, nsave, alg, [kwargs;alg.options])
+    LongstepWrapper{T}(longinterval, nsave, alg, [kwargs...,alg.options...])
 end
 
 function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
@@ -33,7 +33,8 @@ function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
     #TODO x
     x = HSDE_getinitialvalue(model)
     saved = SavedPlanes(x, nsave, neq, nineq)
-    data = LongstepWrapperData(longinterval, nsave, saved, false, 0, 1, 1, similar(x), data)
+    # TODO Fix case with saveineq=false
+    data = LongstepWrapperData(longinterval, nsave, saved, true, 0, 1, 1, similar(x), data)
     return data, status_generator
 end
 
@@ -61,6 +62,8 @@ end
 function getsol(alg::LongstepWrapper, data::LongstepWrapperData, x)
     getsol(alg.alg, data.algdata, x)
 end
+
+getcgiter(data::LongstepWrapperData) = getcgiter(data.algdata)
 
 addprojeq(::Nothing, ::Any, ::Any) = nothing
 addprojineq(::Nothing, ::Any, ::Any) = nothing

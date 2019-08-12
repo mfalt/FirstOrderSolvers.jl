@@ -21,5 +21,8 @@ include("testPSD.jl")
 println("Test: testprint.jl")
 include("testprint.jl")
 
-println("Test: testconvex.jl")
-include("testconvex.jl")
+println("Test: testspecific.jl")
+include("testspecific.jl")
+
+# println("Test: testconvex.jl")
+# include("testconvex.jl")
