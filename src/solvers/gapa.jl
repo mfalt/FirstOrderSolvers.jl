@@ -24,10 +24,10 @@ mutable struct GAPAData{T1,T2} <: FOSSolverData
 end
 #GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, tmp1, tmp2, S1, S2)
 
-function init_algorithm!(alg::GAPA, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model, direct=alg.direct)
-    data = GAPAData(2.0, Array{Float64,1}(undef, hsde.n), Array{Float64,1}(undef, hsde.n),
-            Ref(false), hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::GAPA, model::AbstractFOSModel)
+    S1, S2, n, status_generator = get_sets_and_status(alg, model)
+    data = GAPAData(2.0, Array{Float64,1}(undef, n), Array{Float64,1}(undef, n),
+            Ref(false), S1, S2)
     return data, status_generator
 end
 

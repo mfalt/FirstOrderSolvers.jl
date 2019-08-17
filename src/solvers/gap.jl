@@ -20,10 +20,10 @@ struct GAPData{T1,T2} <: FOSSolverData
     S2::T2
 end
 
-function init_algorithm!(alg::GAP, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model, direct=alg.direct)
-    data = GAPData(Array{Float64,1}(undef, hsde.n), Array{Float64,1}(undef, hsde.n),
-            Ref(false), hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::GAP, model::AbstractFOSModel)
+    S1, S2, n, status_generator = get_sets_and_status(alg, model)
+    data = GAPData(Array{Float64,1}(undef, n), Array{Float64,1}(undef, n),
+            Ref(false), S1, S2)
     return data, status_generator
 end
 

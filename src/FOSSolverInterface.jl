@@ -67,3 +67,13 @@ numvar(model::FOSMathProgModel) = model.input_numvar
 numconstr(model::FOSMathProgModel) = model.input_numconstr
 
 supportedcones(s::FOSAlgorithm) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
+
+
+"""
+    `S1, S2, n, status_generator = get_sets_and_status(alg::FOSAlgorithm, model::FOSMathProgModel)`
+ Get the sets S1, S2 and their size n
+"""
+function get_sets_and_status(alg::FOSAlgorithm, model::FOSMathProgModel)
+    hsde, status_generator = HSDE(model, direct=alg.direct)
+    return hsde.indAffine, hsde.indCones, hsde.n, status_generator
+end

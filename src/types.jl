@@ -1,7 +1,9 @@
 using MathProgBase.SolverInterface
 #export FOSAlgorithm
 
-mutable struct Solution
+abstract type AbstractSolution end
+
+mutable struct Solution <: AbstractSolution
     x::Array{Float64, 1}
     y::Array{Float64, 1}
     s::Array{Float64, 1}
@@ -11,6 +13,8 @@ end
 abstract type FOSAlgorithm <: AbstractMathProgSolver end
 abstract type FOSSolverData end
 struct FOSSolverDataPlaceholder <: FOSSolverData end
+
+abstract type FOSModel end
 
 abstract type AbstractStatus end
 mutable struct NoStatus <: AbstractStatus
@@ -54,3 +58,6 @@ function FOSMathProgModel(s::FOSAlgorithm; kwargs...)
                      x -> (@error "No status generator defined"),
                      UInt64(1), ValueHistories.MVHistory())
 end
+
+# To handle both custom types and
+const AbstractFOSModel = Union{FOSMathProgModel, FOSModel}

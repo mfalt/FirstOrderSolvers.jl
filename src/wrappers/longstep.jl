@@ -31,7 +31,7 @@ function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
     data, status_generator =  init_algorithm!(alg, model)
     neq, nineq = projections_per_step(alg)
     #TODO x
-    x = HSDE_getinitialvalue(model)
+    x = getinitialvalue(model)
     saved = SavedPlanes(x, nsave, neq, nineq)
     # TODO Fix case with saveineq=false
     data = LongstepWrapperData(longinterval, nsave, saved, true, 0, 1, 1, similar(x), data)

@@ -24,9 +24,18 @@ function HSDE(model::FOSMathProgModel; direct=false)
     S2 = DualConeProduct(model.K1,model.K2)
     m,n = S2.m, S2.n
     status_generator = (mo, checki, eps, verbose, debug) ->
-        Status(m, n, 0, mo, :Continue, checki, eps, verbose, false, direct, time_ns(), model.init_duration, debug)
+        HSDEStatus(m, n, 0, mo, :Continue, checki, eps, verbose, false, direct, time_ns(), model.init_duration, debug)
     return HSDE(S1, S2, 2*(size(model.A,1)+size(model.A,2)+1)), status_generator
 end
+
+# TODO Unclear why this is nessesary/differenet
+getinitialvalue(model::FOSMathProgModel) = HSDE_getinitialvalue(model)
+
+getinitialvalue(model::FOSMathProgModel, alg, data) =
+    HSDE_getinitialvalue(model)
+
+populate_solution(model::FOSMathProgModel, alg, data, x, status) =
+    HSDE_populatesolution(model, x, status)
 
 function HSDE_getinitialvalue(model::FOSMathProgModel)
     m, n = size(model.A)
@@ -37,7 +46,7 @@ function HSDE_getinitialvalue(model::FOSMathProgModel)
     return x
 end
 
-function HSDE_populatesolution(model::FOSMathProgModel, x, status::Status)
+function HSDE_populatesolution(model::FOSMathProgModel, x, status::HSDEStatus)
     m, n = size(model.A)
     l = m+n+1
     @assert length(x) == 2l

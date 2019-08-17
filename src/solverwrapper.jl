@@ -1,12 +1,5 @@
-#TODO these are fallbacks
-getinitialvalue(model::FOSMathProgModel, alg, data) =
-    HSDE_getinitialvalue(model)
 
-populate_solution(model::FOSMathProgModel, alg, data, x, status) =
-    HSDE_populatesolution(model, x, status)
-
-
-function solve!(model::FOSMathProgModel)
+function solve!(model::AbstractFOSModel)
     opts = Dict(model.options)
     #TODO better kwarg default handling
     max_iters = :max_iters ∈ keys(opts) ? opts[:max_iters] : 10000
