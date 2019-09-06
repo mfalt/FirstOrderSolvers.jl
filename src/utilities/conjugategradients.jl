@@ -1,6 +1,4 @@
-using SugarBLAS: @blas!
-
-immutable CGdata{T}
+struct CGdata{T}
     r::Array{T,1}
     p::Array{T,1}
     z::Array{T,1}
@@ -8,9 +6,9 @@ immutable CGdata{T}
     firstrun::Base.RefValue{Bool}
 end
 
-CGdata{T}(r::AbstractArray{T},p::AbstractArray{T},z::AbstractArray{T}) = CGdata{T}(r,p,z, T[], Ref(true))
+CGdata(r::AbstractArray{T},p::AbstractArray{T},z::AbstractArray{T}) where T = CGdata{T}(r,p,z, T[], Ref(true))
 
-CGdata(size) = CGdata{Float64}(Array{Float64,1}(size), Array{Float64,1}(size), Array{Float64,1}(size), Array{Float64,1}(size), Ref(true))
+CGdata(size) = CGdata{Float64}(Array{Float64,1}(undef, size), Array{Float64,1}(undef, size), Array{Float64,1}(undef, size), Array{Float64,1}(undef, size), Ref(true))
 
 function conjugategradient!(x,A,b; useasinitial=true)
     cgdata = CGdata(similar(b), similar(b), similar(b))
@@ -31,16 +29,16 @@ Uses `x` as warm start and stores solution in `x`.
 Implemented as in "Matrix Compuatations" 2nd edition, Golub and Van Loan (1989)
 """
 function conjugategradient!(x,A,b,r,p,Ap; tol = size(A,2)*eps(), max_iters = 10000)
-    A_mul_B!(Ap, A, x)
+    mul!(Ap, A, x)
     r .= b .- Ap
     p .= r
     rn = dot(r,r)
     iter = 1
     while true
-        A_mul_B!(Ap, A, p)
+        mul!(Ap, A, p)
         α = rn/dot(Ap,p)
-        @blas! x += α*p
-        @blas! r -= α*Ap
+        x .+= α.*p
+        r .-= α.*Ap
         if norm(r) <= tol || iter >= max_iters
             break
         end
@@ -48,10 +46,10 @@ function conjugategradient!(x,A,b,r,p,Ap; tol = size(A,2)*eps(), max_iters = 100
         rn = dot(r,r)
         β = rn/rnold
         #p .= r .+ β.*p
-        @blas! p *= β
-        @blas! p += r
+        p .*= β
+        p .+= r
         iter += 1
     end
-    iter == max_iters && warn("CG reached max iterations, result may be inaccurate")
+    iter == max_iters && @warn "CG reached max iterations, result may be inaccurate"
     return iter
 end

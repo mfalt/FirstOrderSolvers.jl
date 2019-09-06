@@ -1,5 +1,5 @@
 
-immutable HSDEMatrixQ{T,M<:AbstractMatrix{T},V<:AbstractVector{T}} <: AbstractMatrix{T}
+struct HSDEMatrixQ{T,M<:AbstractMatrix{T},V<:AbstractVector{T}} <: AbstractMatrix{T}
     A::M
     b::V
     c::V
@@ -19,23 +19,26 @@ end
 
 Base.size(Q::HSDEMatrixQ) = (Q.am+Q.an+1, Q.am+Q.an+1)
 
-function Base.showarray(io::IO, Q::T, val::Bool) where {T<:HSDEMatrixQ}
+# Fallback, to have both defined
+Base.show(io::IO, mt::MIME"text/plain", Q::T) where {T<:HSDEMatrixQ} = Base.show(io, Q)
+
+function Base.show(io::IO, Q::T) where {T<:HSDEMatrixQ}
     m,n = size(Q)
     println(io, "$(m)x$(m) $T:")
     println(io, "[0   A'  c;\n -A  0   b;\n -c' -b' 0]")
     println(io,"where A:")
-    Base.showarray(io, Q.A, false)
+    Base.show(io, Q.A)
     println(io,"\nb:")
-    Base.showarray(io, Q.b, true)
+    Base.show(io, Q.b)
     println(io,"\nc:")
-    Base.showarray(io, Q.c, true)
+    Base.show(io, Q.c)
 end
 
 # Q of size
 #(n,n) (n,m) (n,1)
 #(m,m) (m,m) (m,1)
 #(1,n) (1,m) (1,1)
-function LinAlg.A_mul_B!{T,M<:AbstractArray{T,2},V<:AbstractArray{T,1}}(Y::AbstractArray{T,1}, Q::HSDEMatrixQ{T,M,V}, B::AbstractArray{T,1})
+function mul!(Y::AbstractArray{T,1}, Q::HSDEMatrixQ{T,M,V}, B::AbstractArray{T,1}) where {T,M<:AbstractArray{T,2},V<:AbstractArray{T,1}}
     @assert size(Q) == (size(Y,1), size(B,1))
     y1 = view(Y, 1:Q.an)
     y2 = view(Y, (Q.an+1):(Q.an+Q.am))
@@ -45,24 +48,24 @@ function LinAlg.A_mul_B!{T,M<:AbstractArray{T,2},V<:AbstractArray{T,1}}(Y::Abstr
     A = Q.A
     b = Q.b
     c = Q.c
-    At_mul_B!(y1, A, b2)
-    A_mul_B!( y2, A, b1)
+    mul!(y1, transpose(A), b2)
+    mul!( y2, A, b1)
     #TODO maybe switch back for readability?
-    @blas! y1 += b3*c # y1 .=  y1 .+ c.*b3
-    @blas! y2 -= b3*b # y2 .= b.*b3 .- y2
-    scale!(y2, -1)
+    y1 .+= b3.*c # y1 .=  y1 .+ c.*b3
+    y2 .-= b3.*b # y2 .= b.*b3 .- y2
+    y2 .= .-y2
     Y[Q.am+Q.an+1] = - dot(c, b1) - dot(b,b2)
     return Y
 end
 
-function LinAlg.At_mul_B!{T,M<:AbstractArray{T,2},V<:AbstractArray{T,1}}(Y::AbstractArray{T,1}, Q::HSDEMatrixQ{T,M,V}, B::AbstractArray{T,1})
-    A_mul_B!(Y,Q,B)
-    scale!(Y, -1)
+function mul!(Y::AbstractArray{T,1}, Q::Transpose{T, QMat}, B::AbstractArray{T,1}) where {T, M<:AbstractArray{T,2},V<:AbstractArray{T,1}, QMat<:HSDEMatrixQ{T,M,V}}
+    mul!(Y,Q.parent,B)
+    Y .= .-Y
     return Y
 end
 
 
-immutable HSDEMatrix{T,QType<:AbstractMatrix{T}} <: AbstractMatrix{T}
+struct HSDEMatrix{T,QType<:AbstractMatrix{T}} <: AbstractMatrix{T}
     Q::QType
     cgdata::CGdata{T}
 end
@@ -70,7 +73,7 @@ end
 """
 HSDEMatrix(Q::HSDEMatrixQ)
 """
-HSDEMatrix{T, QType<:AbstractMatrix{T}}(Q::QType) = HSDEMatrix{T,QType}(Q, CGdata(2*size(Q)[1]))
+HSDEMatrix(Q::QType) where {T, QType<:AbstractMatrix{T}} = HSDEMatrix{T,QType}(Q, CGdata(2*size(Q)[1]))
 
 """
 HSDEMatrix(A::M, b::V, c::V) where {T,M<:AbstractMatrix{T},V<:AbstractVector{T}}
@@ -85,12 +88,15 @@ function Base.size(M::HSDEMatrix)
     return (2m,2m)
 end
 
-function Base.showarray(io::IO, M::T, val::Bool) where {T<:HSDEMatrix}
+# Try fallback
+Base.show(io::IO, mt::MIME"text/plain", M::T) where {T<:HSDEMatrix} = Base.show(io, M)
+
+function Base.show(io::IO, M::T) where {T<:HSDEMatrix}
     m,n = size(M)
     println(io, "$(m)x$(m) $T:")
     println(io, "[I  Q';\n Q -I]")
     println(io,"where Q:")
-    Base.showarray(io, M.Q, false)
+    Base.show(io, M.Q)
 end
 
 """
@@ -115,14 +121,14 @@ function prox!(y::AbstractVector, A::HSDEMatrix, x::AbstractVector)
     #Let v=Q*u
     u = view(y,1:m)
     v = view(y,(m+1):2m)
-    A_mul_B!(v, A.Q, u)
+    mul!(v, A.Q, u)
     return 0.0
 end
 
 
 
 
-function LinAlg.A_mul_B!{T,QType<:AbstractMatrix{T}}(Y::AbstractArray{T,1}, M::HSDEMatrix{T,QType}, B::AbstractArray{T,1})
+function mul!(Y::AbstractArray{T,1}, M::HSDEMatrix{T,QType}, B::AbstractArray{T,1}) where {T,QType<:AbstractMatrix{T}}
     m2 = size(M)[1]
     mQ = size(M.Q)[1]
     @assert (m2,m2) == (size(Y,1), size(B,1))
@@ -130,12 +136,12 @@ function LinAlg.A_mul_B!{T,QType<:AbstractMatrix{T}}(Y::AbstractArray{T,1}, M::H
     y2 = view(Y, (mQ+1):(2mQ))
     b1 = view(B, 1:mQ)
     b2 = view(B, (mQ+1):(2mQ))
-    At_mul_B!(y1, M.Q, b2)
-    A_mul_B!( y2, M.Q, b1)
+    mul!(y1, transpose(M.Q), b2)
+    mul!( y2, M.Q, b1)
     @inbounds y1 .= y1 .+ b1
     @inbounds y2 .= y2 .- b2
     return Y
 end
 
-LinAlg.At_mul_B!{T,QType<:AbstractMatrix{T}}(Y::AbstractArray{T,1}, Q::HSDEMatrix{T,QType}, B::AbstractArray{T,1}) =
-    A_mul_B!(Y, Q, B)
+mul!(Y::AbstractArray{T,1}, Q::Transpose{T, QMat}, B::AbstractArray{T,1}) where {T, QType<:AbstractMatrix{T}, QMat<:HSDEMatrix{T,QType}} =
+    mul!(Y, Q.parent, B)

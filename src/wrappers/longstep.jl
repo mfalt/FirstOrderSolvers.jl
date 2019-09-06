@@ -2,14 +2,14 @@ export LongstepWrapper
 
 include("saveplanes.jl")
 
-type LongstepWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
+mutable struct LongstepWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
     longinterval::Int64
     nsave::Int64
     alg::T
     options
 end
 
-type LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
+mutable struct LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
     longinterval::Int64
     nsave::Int64
     saved::SavedPlanes{Float64}
@@ -21,19 +21,20 @@ type LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
     algdata::T
 end
 
-function LongstepWrapper{T}(alg::T; longinterval=100, nsave=10, kwargs...)
-    LongstepWrapper{T}(longinterval, nsave, alg, [kwargs;alg.options])
+function LongstepWrapper(alg::T; longinterval=100, nsave=10, kwargs...) where T
+    LongstepWrapper{T}(longinterval, nsave, alg, [kwargs...,alg.options...])
 end
 
 function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
     alg, longinterval, nsave = long.alg, long.longinterval, long.nsave
-    !support_longstep(alg) && error("Algorithm alg does not support longstep")
+    !support_longstep(alg) && @error "Algorithm alg does not support longstep"
     data, status_generator =  init_algorithm!(alg, model)
     neq, nineq = projections_per_step(alg)
     #TODO x
-    x = HSDE_getinitialvalue(model)
+    x = getinitialvalue(model)
     saved = SavedPlanes(x, nsave, neq, nineq)
-    data = LongstepWrapperData(longinterval, nsave, saved, false, 0, 1, 1, similar(x), data)
+    # TODO Fix case with saveineq=false
+    data = LongstepWrapperData(longinterval, nsave, saved, true, 0, 1, 1, similar(x), data)
     return data, status_generator
 end
 
@@ -62,10 +63,12 @@ function getsol(alg::LongstepWrapper, data::LongstepWrapperData, x)
     getsol(alg.alg, data.algdata, x)
 end
 
-addprojeq(::Void, ::Any, ::Any) = nothing
-addprojineq(::Void, ::Any, ::Any) = nothing
+getcgiter(data::LongstepWrapperData) = getcgiter(data.algdata)
 
-function addprojeq{T<:LongstepWrapperData}(long::T, y, x)
+addprojeq(::Nothing, ::Any, ::Any) = nothing
+addprojineq(::Nothing, ::Any, ::Any) = nothing
+
+function addprojeq(long::T, y, x) where T<:LongstepWrapperData
     if long.savepos > 0
         #println("adding EQ, nsave: $(long.nsave) i:$(long.i) eqi:$(long.eqi) uneqi:$(long.uneqi)")
         s = long.saved
@@ -82,7 +85,7 @@ function addprojeq{T<:LongstepWrapperData}(long::T, y, x)
 end
 
 """Saves inequalities as equality for now"""
-function addprojineq{T<:LongstepWrapperData}(long::T, y, x)
+function addprojineq(long::T, y, x) where T<:LongstepWrapperData
     if long.savepos > 0 && (long.saveineq || long.savepos == long.nsave+1)
         #println("adding inEQ, nsave: $(long.nsave) i:$(long.i) eqi:$(long.eqi) uneqi:$(long.uneqi)")
         s = long.saved

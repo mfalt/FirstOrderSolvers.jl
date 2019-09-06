@@ -1,11 +1,11 @@
-using Convex, FirstOrderSolvers, SCS, Base.Test, ProximalOperators
+using Convex, FirstOrderSolvers, SCS, Test, ProximalOperators
 
 ys = [-0.0064709 -0.22443;
      -0.22443    -1.02411]
 y = Variable((2, 2))
 
 #Solve with SCS
-p = minimize(vecnorm(y-ys), isposdef(y))
+p = minimize(norm(vec(y-ys)), isposdef(y))
 solve!(p, SCSSolver(eps=1e-8, verbose=0))
 
 ysol  = copy(y.value)
@@ -19,7 +19,7 @@ prox!(X, IndPSD(), Y)
 @test X.data ≈ ysol atol=1e-8
 
 #Solve with DR
-p = minimize(vecnorm(y-ys), isposdef(y))
+p = minimize(norm(vec(y-ys)), isposdef(y))
 solve!(p, DR(eps=1e-8, verbose=0))
 
 @test y.value ≈ ysol atol=1e-8

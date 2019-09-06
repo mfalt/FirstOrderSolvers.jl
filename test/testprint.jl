@@ -18,7 +18,7 @@ o2  = "   100|"
 o3  = "   200|"
 o4  = "Found solution i=200"
 
-srand(10)
+Random.seed!(10)
 n = 500
 A = sprandn(n, 2n, 0.1)
 x̄ = randn(2n)
@@ -27,7 +27,7 @@ b = A*x̄
 x = Variable(2n)
 p = minimize(norm(A*x-b), sum(x) == sum(x̄))
 
-origstdout = STDOUT
+origstdout = stdout
 
 #With cg output
 s = GAPA(0.8, 0.9, direct=false, verbose=2, debug=0, eps=1e-8, checki=100)

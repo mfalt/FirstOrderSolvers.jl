@@ -3,7 +3,7 @@
 GAP
 
 """
-type GAP <: FOSAlgorithm
+mutable struct GAP <: FOSAlgorithm
     α::Float64
     α1::Float64
     α2::Float64
@@ -12,7 +12,7 @@ type GAP <: FOSAlgorithm
 end
 GAP(α=0.8, α1=1.8, α2=1.8; direct=false, kwargs...) = GAP(α, α1, α2, direct, kwargs)
 
-immutable GAPData{T1,T2} <: FOSSolverData
+struct GAPData{T1,T2} <: FOSSolverData
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
     constinit::Base.RefValue{Bool} # If constant term has been calculated (linesearch feature)
@@ -20,10 +20,10 @@ immutable GAPData{T1,T2} <: FOSSolverData
     S2::T2
 end
 
-function init_algorithm!(alg::GAP, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model, direct=alg.direct)
-    data = GAPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n),
-            Ref(false), hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::GAP, model::AbstractFOSModel)
+    S1, S2, n, status_generator = get_sets_and_status(alg, model)
+    data = GAPData(Array{Float64,1}(undef, n), Array{Float64,1}(undef, n),
+            Ref(false), S1, S2)
     return data, status_generator
 end
 

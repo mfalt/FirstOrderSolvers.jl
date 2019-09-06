@@ -25,3 +25,6 @@ support_linesearch(::Any) = Val{:False}
 function getcgiter(data::FOSSolverData)
     return getcgiter(data.S1)
 end
+
+# Fallback
+getcgiter(data) = throw(ArgumentError("CGdata not available for type $(typeof(data))"))

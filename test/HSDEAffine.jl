@@ -1,5 +1,7 @@
 using FirstOrderSolvers: HSDEMatrixQ, HSDEMatrix
+using SparseArrays
 using ProximalOperators: IndAffine, prox!
+import LinearAlgebra: mul!
 
 function getQ1Q2(A)
     m, n = size(A)
@@ -15,8 +17,8 @@ function getQ1Q2(A)
 end
 
 function getHSDEMatrix(Q1,Q2)
-    M1 = [speye(size(Q1)...) Q1'                ;
-          Q1                 -speye(size(Q1)...)]
+    M1 = [I           sparse(Q1') ;
+          sparse(Q1)  -I          ]
     M2 = HSDEMatrix(Q2)
     return M1, M2
 end
@@ -27,14 +29,14 @@ function testHSDEQ_A_mul_B(Q1, Q2, m, n)
 
     y1, y2 = randn(m+n+1), randn(m+n+1)
 
-    A_mul_B!(y1, Q1, rhs1)
-    A_mul_B!(y2, Q2, rhs2)
+    mul!(y1, Q1, rhs1)
+    mul!(y2, Q2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
 
-    At_mul_B!(y1, Q1, rhs1)
-    At_mul_B!(y2, Q2, rhs2)
+    mul!(y1, transpose(Q1), rhs1)
+    mul!(y2, transpose(Q2), rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
@@ -46,14 +48,14 @@ function testHSDEMatrix_A_mul_B(M1, M2, m, n)
 
     y1, y2 = randn(2m+2n+2), randn(2m+2n+2)
 
-    A_mul_B!(y1, M1, rhs1)
-    A_mul_B!(y2, M2, rhs2)
+    mul!(y1, M1, rhs1)
+    mul!(y2, M2, rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
 
-    At_mul_B!(y1, M1, rhs1)
-    At_mul_B!(y2, M2, rhs2)
+    mul!(y1, transpose(M1), rhs1)
+    mul!(y2, transpose(M2), rhs2)
 
     @test rhs1 == rhs2
     @test y1 ≈ y2
@@ -67,7 +69,7 @@ function testHSDE(A, m, n)
     testHSDEMatrix_A_mul_B(M1, M2, m, n)
 
     b = randn(size(M2)[1])
-    S1 = IndAffine([Q1 -speye(size(Q1,1))], zeros(size(Q1,1)))
+    S1 = IndAffine([sparse(Q1) -I], zeros(size(Q1,1)))
     y1 = similar(b)
     y2 = similar(b)
     FirstOrderSolvers.prox!(y2, M2, b)
@@ -79,7 +81,7 @@ function testHSDE(A, m, n)
     @test y2 ≈ y3
 end
 
-srand(1)
+Random.seed!(1)
 ma,na = 10,20
 A = randn(10*ma,10*na)
 testHSDE(A, size(A)...)

@@ -1,7 +1,9 @@
-importall MathProgBase.SolverInterface
+using MathProgBase.SolverInterface
 #export FOSAlgorithm
 
-type Solution
+abstract type AbstractSolution end
+
+mutable struct Solution <: AbstractSolution
     x::Array{Float64, 1}
     y::Array{Float64, 1}
     s::Array{Float64, 1}
@@ -10,20 +12,22 @@ end
 
 abstract type FOSAlgorithm <: AbstractMathProgSolver end
 abstract type FOSSolverData end
-type FOSSolverDataPlaceholder <: FOSSolverData end
+struct FOSSolverDataPlaceholder <: FOSSolverData end
+
+abstract type FOSModel end
 
 abstract type AbstractStatus end
-type NoStatus <: AbstractStatus
+mutable struct NoStatus <: AbstractStatus
     status::Symbol
 end
 # Define Solver for interface
-# immutable FOSSolver <: AbstractMathProgSolver
+# struct FOSSolver <: AbstractMathProgSolver
 #     options
 # end
 # FOSSolver(;kwargs...) = FOSSolver(kwargs)
 #
 
-type FOSMathProgModel <: AbstractConicModel
+mutable struct FOSMathProgModel <: AbstractConicModel
     input_numconstr::Int64            # Only needed for interface?
     input_numvar::Int64               # Only needed for interface?
     K1::ConeProduct
@@ -51,5 +55,9 @@ function FOSMathProgModel(s::FOSAlgorithm; kwargs...)
     FOSMathProgModel(0, 0, ConeProduct(), ConeProduct(), spzeros(0, 0),
                      Float64[], Float64[], s, FOSSolverDataPlaceholder(), :NotSolved,
                      0.0, Float64[], Float64[], Float64[], Dict{Symbol,Any}(kwargs), -1,
-                     x -> error("No status generator defined"), UInt64(1), ValueHistories.MVHistory())
+                     x -> (@error "No status generator defined"),
+                     UInt64(1), ValueHistories.MVHistory())
 end
+
+# To handle both custom types and
+const AbstractFOSModel = Union{FOSMathProgModel, FOSModel}

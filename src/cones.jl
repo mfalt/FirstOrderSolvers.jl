@@ -28,7 +28,7 @@ const badcones = ProximableFunction[]
 #     end
 # end
 
-type ConeProduct{N,T} <: ProximableFunction
+mutable struct ConeProduct{N,T} <: ProximableFunction
     ranges::NTuple{N, UnitRange{Int64}}
     cones::T
 end
@@ -39,15 +39,15 @@ ConeProduct() = ConeProduct{0,Any}((),())
 #     return ConeProduct{N,T}(ranges, cones)
 # end
 
-toRanges{N}(rangesIn::NTuple{N, UnitRange{Int64}}) = rangesIn
+toRanges(rangesIn::NTuple{N, UnitRange{Int64}}) where N = rangesIn
 
-function toRanges{N, T<:Integer}(rangesIn::NTuple{N,Array{T,1}})
-    ranges = Array{UnitRange{Int64},1}(N)
+function toRanges(rangesIn::NTuple{N,Array{T,1}}) where {N, T<:Integer}
+    ranges = Array{UnitRange{Int64},1}(undef, N)
     for j in 1:N
         range = rangesIn[j]
         for (i,el) in enumerate(range[1]:range[end])
             if el != range[i]
-                error("Invalid range in input")
+                @error "Invalid range in input"
             end
         end
         ranges[j] = range[1]:range[end]
@@ -86,7 +86,7 @@ end
 # proxDual!(y, C::DualCone, x) = prox!(y, C.C, x)
 
 
-function prox!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
+function prox!(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray) where {N,T}
     #TODO Paralell implementation
     for i = 1:N
         prox!(view(y, C.ranges[i]), C.cones[i], view(x, C.ranges[i]))
@@ -103,7 +103,7 @@ proxDual!(y::AbstractArray, C::IndNonpositive, x::AbstractArray)   = prox!(y, C,
 # TODO figure out if self dual PSD
 #proxDual!(y::AbstractArray, C::IndPSD, x::AbstractArray)           = prox!(y, C, x)
 
-function proxDual!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
+function proxDual!(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray) where {N,T}
     #TODO Paralell implementation
     for i = 1:N
         proxDual!(view(y, C.ranges[i]), C.cones[i], view(x, C.ranges[i]))
@@ -111,14 +111,14 @@ function proxDual!{N,T}(y::AbstractArray, C::ConeProduct{N,T}, x::AbstractArray)
 end
 
 """ Indicator of K2×K1*×R+ × K2*×K1×R+ ∈ (R^n,R^m,R)^2"""
-type DualConeProduct{T1<:ConeProduct,T2<:ConeProduct} <: ProximableFunction
+mutable struct DualConeProduct{T1<:ConeProduct,T2<:ConeProduct} <: ProximableFunction
     K1::T1
     K2::T2
     m::Int64
     n::Int64
 end
 
-DualConeProduct{T1,T2}(K1::T1,K2::T2) = DualConeProduct{T1,T2}(K1, K2, K1.ranges[end][end], K2.ranges[end][end])
+DualConeProduct(K1::T1,K2::T2) where {T1,T2} = DualConeProduct{T1,T2}(K1, K2, K1.ranges[end][end], K2.ranges[end][end])
 function prox!(y::AbstractArray, K::DualConeProduct, x::AbstractArray)
     m, n = K.m, K.n
     K1, K2 = K.K1, K.K2

@@ -1,23 +1,28 @@
 using FirstOrderSolvers
-using Base.Test
+using LinearAlgebra
+using Test
+using Random
 
-info("Test: conjugateGradient.jl")
+println("Test: conjugateGradient.jl")
 include("conjugateGradient.jl")
 
-info("Test: HSDEAffine.jl")
+println("Test: HSDEAffine.jl")
 include("HSDEAffine.jl")
 
-info("Test: affinepluslinear.jl")
+println("Test: affinepluslinear.jl")
 include("affinepluslinear.jl")
 
-info("Test: testDRandGAPA.jl")
+println("Test: testDRandGAPA.jl")
 include("testDRandGAPA.jl")
 
-info("Test: testPSD.jl")
+println("Test: testPSD.jl")
 include("testPSD.jl")
 
-info("Test: testprint.jl")
+println("Test: testprint.jl")
 include("testprint.jl")
 
-info("Test: testconvex.jl")
-include("testconvex.jl")
+#println("Test: testspecific.jl")
+#include("testspecific.jl")
+
+# println("Test: testconvex.jl")
+# include("testconvex.jl")

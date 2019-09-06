@@ -3,13 +3,13 @@
 Dykstra
 
 """
-type Dykstra <: FOSAlgorithm
+mutable struct Dykstra <: FOSAlgorithm
     direct::Bool
     options
 end
 Dykstra(;direct=false, kwargs...) = Dykstra(direct, kwargs)
 
-immutable DykstraData{T1,T2} <: FOSSolverData
+struct DykstraData{T1,T2} <: FOSSolverData
     p::Array{Float64,1}
     q::Array{Float64,1}
     y::Array{Float64,1}
@@ -17,10 +17,9 @@ immutable DykstraData{T1,T2} <: FOSSolverData
     S2::T2
 end
 
-function init_algorithm!(alg::Dykstra, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model, direct=alg.direct)
-    data = DykstraData(zeros(hsde.n), zeros(hsde.n), Array{Float64,1}(hsde.n),
-                hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::Dykstra, model::AbstractFOSModel)
+    S1, S2, n, status_generator = get_sets_and_status(alg, model)
+    data = DykstraData(zeros(n), zeros(n), Array{Float64,1}(undef, n), S1, S2)
     return data, status_generator
 end
 

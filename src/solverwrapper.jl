@@ -1,12 +1,5 @@
-#TODO these are fallbacks
-getinitialvalue(model::FOSMathProgModel, alg, data) =
-    HSDE_getinitialvalue(model)
 
-populate_solution(model::FOSMathProgModel, alg, data, x, status) =
-    HSDE_populatesolution(model, x, status)
-
-
-function solve!(model::FOSMathProgModel)
+function solve!(model::AbstractFOSModel)
     opts = Dict(model.options)
     #TODO better kwarg default handling
     max_iters = :max_iters ∈ keys(opts) ? opts[:max_iters] : 10000
@@ -25,7 +18,7 @@ end
 
 
 function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
-    tic()
+    t1 = time()
     printstatusheader(status)
     for i = 1:max_iters
         status.i = i
@@ -41,7 +34,8 @@ function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
     end
     if status.verbose > 0
         println("Time for iterations: ")
-        toc()
+        t2 = time()
+        println("$(t2-t1) s")
     end
     return guess
 end

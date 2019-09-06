@@ -3,7 +3,7 @@
 GAPP projected GAP
 Defaults to direct solve of the linear system
 """
-type GAPP <: FOSAlgorithm
+mutable struct GAPP <: FOSAlgorithm
     α::Float64
     α1::Float64
     α2::Float64
@@ -13,16 +13,16 @@ type GAPP <: FOSAlgorithm
 end
 GAPP(α=0.8, α1=1.8, α2=1.8; direct=true, iproj=100, kwargs...) = GAPP(α, α1, α2, iproj, direct, kwargs)
 
-immutable GAPPData{T1,T2} <: FOSSolverData
+struct GAPPData{T1,T2} <: FOSSolverData
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
     S1::T1
     S2::T2
 end
 
-function init_algorithm!(alg::GAPP, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model, direct=alg.direct)
-    data = GAPPData(Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n), hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::GAPP, model::AbstractFOSModel)
+    S1, S2, n, status_generator = get_sets_and_status(alg, model)
+    data = GAPPData(Array{Float64,1}(undef, n), Array{Float64,1}(undef, n), S1, S2)
     return data, status_generator
 end
 

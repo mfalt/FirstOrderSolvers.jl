@@ -1,7 +1,7 @@
 using FirstOrderSolvers: KKTMatrix, AffinePlusLinear
 using Convex
 
-srand(10)
+Random.seed!(10)
 
 #Test KKTMatrix
 A = randn(10,20)
@@ -10,12 +10,12 @@ M2 = KKTMatrix(A)
 x = randn(30)
 y1 = randn(30)
 y2 = randn(30)
-A_mul_B!(y1, M1, x)
-A_mul_B!(y2, M2, x)
+mul!(y1, M1, x)
+mul!(y2, M2, x)
 @test y1 ≈ y2
 
-At_mul_B!(y1, M1, x)
-At_mul_B!(y2, M2, x)
+mul!(y1, transpose(M1), x)
+mul!(y2, transpose(M2), x)
 @test y1 ≈ y2
 
 #Test AffinePlusLinear
@@ -28,7 +28,7 @@ b = randn(10)
 # β = 1
 β = 1
 S2 = AffinePlusLinear(A, b, q, β)
-y2 = Array{Float64,1}(30)
+y2 = Array{Float64,1}(undef, 30)
 FirstOrderSolvers.prox!(y2, S2, [x0;z0])
 x2 = view(y2,1:20)
 z2 = view(y2,21:30)
@@ -49,7 +49,7 @@ y3 = [I A'; A -I]\[x0-q+A'z0; b]
 
 β = -1
 S2 = AffinePlusLinear(A, b, q, β)
-y2 = Array{Float64,1}(30)
+y2 = Array{Float64,1}(undef, 30)
 FirstOrderSolvers.prox!(y2, S2, [x0;z0])
 x2 = view(y2,1:20)
 z2 = view(y2,21:30)

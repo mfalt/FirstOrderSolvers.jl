@@ -1,5 +1,5 @@
 using Convex
-srand(2)
+Random.seed!(2)
 
 m = 40;  n = 50
 A = randn(m, n); b = randn(m, 1)

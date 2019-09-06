@@ -6,7 +6,7 @@ Same as GAP but with adaptive `α1,α2` set to optimal `αopt=2/(1+sinθ)`
 according to the estimate of the Friedrischs angle `θ`.
 `β` is averaging factor between `αopt` and `2`: `α1=α2= (1-β)*αopt + β*2.0`.
 """
-type GAPA  <: FOSAlgorithm
+mutable struct GAPA  <: FOSAlgorithm
     α::Float64
     β::Float64
     direct::Bool
@@ -14,7 +14,7 @@ type GAPA  <: FOSAlgorithm
 end
 GAPA(α=1.0, β=0.0; direct=false, kwargs...) = GAPA(α, β, direct, kwargs)
 
-type GAPAData{T1,T2} <: FOSSolverData
+mutable struct GAPAData{T1,T2} <: FOSSolverData
     α12::Float64
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
@@ -24,10 +24,10 @@ type GAPAData{T1,T2} <: FOSSolverData
 end
 #GAPAData{T1,T2}(α12, tmp1, tmp2, S1::T1, S2::T2) = GAPAData{T1,T2}(α12, tmp1, tmp2, S1, S2)
 
-function init_algorithm!(alg::GAPA, model::FOSMathProgModel)
-    hsde, status_generator = HSDE(model, direct=alg.direct)
-    data = GAPAData(2.0, Array{Float64,1}(hsde.n), Array{Float64,1}(hsde.n),
-            Ref(false), hsde.indAffine, hsde.indCones)
+function init_algorithm!(alg::GAPA, model::AbstractFOSModel)
+    S1, S2, n, status_generator = get_sets_and_status(alg, model)
+    data = GAPAData(2.0, Array{Float64,1}(undef, n), Array{Float64,1}(undef, n),
+            Ref(false), S1, S2)
     return data, status_generator
 end
 

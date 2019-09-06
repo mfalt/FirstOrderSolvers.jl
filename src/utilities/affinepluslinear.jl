@@ -1,7 +1,7 @@
 """
 Representation of the matrix [I A'; A -I]
 """
-immutable KKTMatrix{T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+struct KKTMatrix{T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     A::M
     am::Int64
     an::Int64
@@ -12,12 +12,12 @@ immutable KKTMatrix{T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     # y2::SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}
 end
 
-KKTMatrix{T, M<:AbstractMatrix{T}}(A::M) = KKTMatrix{T,M}(A, size(A)...)#,
+KKTMatrix(A::M) where {T, M<:AbstractMatrix{T}} = KKTMatrix{T,M}(A, size(A)...)#,
 #            view([1.],1:1), view([1.],1:1), view([1.],1:1), view([1.],1:1))
 
 # Alternative implementation with "constant" views
 
-# @inbounds function Base.A_mul_B!{T}(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T})
+# @inbounds function Base.A_mul_B!(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T}) where {T}
 #      if M.x1.parent !== x || M.y1.parent !== y
 #         M.x1 = view(x,      1:M.an     )
 #         M.x2 = view(x, M.an+1:M.an+M.am)
@@ -34,7 +34,7 @@ KKTMatrix{T, M<:AbstractMatrix{T}}(A::M) = KKTMatrix{T,M}(A, size(A)...)#,
 #     @blas! M.y2 -= M.x2
 # end
 
-@inbounds function Base.A_mul_B!{T}(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T})
+@inbounds function mul!(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T}) where T
     x1 = view(x,      1:M.an     )
     x2 = view(x, M.an+1:M.an+M.am)
     y1 = view(y,      1:M.an     )
@@ -42,20 +42,20 @@ KKTMatrix{T, M<:AbstractMatrix{T}}(A::M) = KKTMatrix{T,M}(A, size(A)...)#,
 
     # [I A';
     #  A -I]
-    At_mul_B!(y1, M.A, x2)
-    @blas! y1 += x1
-    A_mul_B!(y2,  M.A, x1)
-    @blas! y2 -= x2
+    mul!(y1, transpose(M.A), x2)
+    y1 .+= x1
+    mul!(y2,  M.A, x1)
+    y2 .-= x2
 end
 
 #Assuming we don't introduce scaling ρ
-Base.At_mul_B!{T}(y::AbstractVector{T}, M::KKTMatrix, x::AbstractVector{T}) = A_mul_B!(y, M, x)
+mul!(y::AbstractVector{T}, M::Transpose{T, MType}, x::AbstractVector{T}) where {T, MType<:KKTMatrix} = mul!(y, M.parent, x)
 
 """
 Representation of the function `f([x;z]) = q'x+i(Ax-βz==b)`
 where `β` is `1` or `-1`.
 """
-type AffinePlusLinear{T,M<:AbstractMatrix{T}} <: ProximalOperators.ProximableFunction
+mutable struct AffinePlusLinear{T,M<:AbstractMatrix{T}} <: ProximalOperators.ProximableFunction
     M::KKTMatrix{T,M}
     A::M
     β::Int64
@@ -68,11 +68,11 @@ type AffinePlusLinear{T,M<:AbstractMatrix{T}} <: ProximalOperators.ProximableFun
     cgdata::CGdata{Float64}
 end
 
-function AffinePlusLinear{T,M<:AbstractMatrix{T}}(A::M, b, q, β; decreasing_accuracy=false)
+function AffinePlusLinear(A::M, b, q, β; decreasing_accuracy=false) where {T,M<:AbstractMatrix{T}}
     am, an = size(A)
     @assert β == 1 || β == -1
     #Initiate second half of rhs, maybe without view?
-    rhs = Array{T}(am+an)
+    rhs = Array{T}(undef, am+an)
     rhs2 = view(rhs, (1+an):(am+an))
     rhs2 .= b
     return AffinePlusLinear{T,M}(KKTMatrix(A), A, β, b, q, rhs, decreasing_accuracy, 1, 0, CGdata(length(rhs)))
@@ -91,7 +91,7 @@ function prox!(y::AbstractArray, S::AffinePlusLinear, x::AbstractArray)
     y2   = view(y,     (an+1):(an+am))
     #Build rhs, rhs2 already contains b
     β = S.β
-    At_mul_B!(rhs1, S.A, x2)
+    mul!(rhs1, transpose(S.A), x2)
     rhs1 .= β.*rhs1 .+ x1 .- S.q
     #Now rhs = [x-q+β*A'z; b]
 
@@ -117,7 +117,7 @@ function prox!(y::AbstractArray, S::AffinePlusLinear, x::AbstractArray)
     iter = conjugategradient!(y, S.M, S.rhs, cgdata.r, cgdata.p, cgdata.z,
                                 tol = tol, max_iters = max_iters)
 
-    iter == max_iters && warn("CG reached max iterations, result may be inaccurate")
+    iter == max_iters && @warn "CG reached max iterations, result may be inaccurate"
     S.cgiter = iter
     cgdata.xinit .= y #Save initial guess for next prox!
     #Now scale y2 with beta β
