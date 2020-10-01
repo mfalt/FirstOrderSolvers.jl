@@ -41,9 +41,13 @@ end
 
 function S1!(y, alg::GAP, data::GAPData, x, i, status::AbstractStatus, longstep=nothing)
     α1, S1 =  alg.α1, data.S1
+    logextra(status, x)
     prox!(y, S1, x)
+    logextra(status, y)
     addprojeq(longstep, y, x)
     y .= α1.*y .+ (1-α1).*x
+    logextra(status, y)
+    return y
 end
 
 function S2!(y, alg::GAP, data::GAPData, x, i, status::AbstractStatus, longstep=nothing)

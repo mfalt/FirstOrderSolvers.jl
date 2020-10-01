@@ -3,6 +3,7 @@ mutable struct FeasibilityStatus <: AbstractStatus
     i::Int64
     model::FeasibilityModel
     prev::Array{Float64,1} # Previous iterate to check convergence
+    extra::Array{Array{Float64,1},1} # Extra iterates to save
     status::Symbol
     checki::Int64
     eps::Float64
@@ -14,7 +15,14 @@ mutable struct FeasibilityStatus <: AbstractStatus
     debug::Int64
 end
 
-
+# For possibility to save extra data in status
+function logextra(stat::FeasibilityStatus, z; override = false)
+    if (stat.i % stat.checki == 0 || override) && stat.debug > 0
+        push!(stat.extra, copy(z))
+        return true
+    end
+    return false
+end
 
 """ checkstatus(stat::FeasibilityStatus, x)
 Returns `false` if no check was made
@@ -25,12 +33,13 @@ function checkstatus(stat::FeasibilityStatus, z; override = false)
     #TODO fix m, n
     if stat.i % stat.checki == 0 || override
         t = time_ns() - stat.init_time
-        n, i, model, verbose, debug, ϵ = stat.n, stat.i, stat.model, stat.verbose, stat.debug, stat.eps
+        n, i, model, verbose, debug, ϵ, extra = stat.n, stat.i, stat.model, stat.verbose, stat.debug, stat.eps, stat.extra
         prev = stat.prev
         # TODO Measure better
         err = norm(prev - z)
         if debug > 0
-            savedata(i, err, z, t, model, debug)
+            savedata(i, err, z, t, model, extra, debug)
+            empty!(extra)
         end
         if verbose > 0
             if !stat.direct
@@ -82,12 +91,13 @@ function printstatusiter(i, err, cgiter, t)
     @printf("%6d|% 9.2e % 4d % .1es\n",i,err,cgiter,t/1e9)
 end
 
-function savedata(i, err, z, t, model, debug)
+function savedata(i, err, z, t, model, extra, debug)
     history = model.history
     push!(history, :err, i, err)
     push!(history, :t, i, t)
     if debug > 1
-        push!(history, :z, i, z)
+        push!(history, :z, i, copy(z))
+        push!(history, :extra, i, deepcopy(extra))
     end
     return
 end

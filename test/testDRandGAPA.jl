@@ -7,8 +7,16 @@ x = Variable(n)
 problem = minimize(sumsquares(A * x - b), [x >= 0])
 
 ϵ = 1e-8
-opt = 12.38418747141913
-solve!(problem, DR(eps=ϵ, verbose=0))
+@static if VERSION >= v"1.5.0"
+    # New random numbers in julia 1.5
+    opt = 10.945929126466417
+    #opt = 10.945829112949474
+else
+    opt = 12.38418747141913 # Before julia 1.5
+end
+dr = DR(eps=ϵ, verbose=1)
+
+solve!(problem, dr)
 
 @test problem.status == :Optimal
 @test problem.optval ≈ opt
@@ -37,5 +45,5 @@ problem = minimize(sumsquares(A * x - b), [x >= 0])
 solve!(problem, GAPA(0.5, 0.9, eps=1e-9, verbose=0))
 
 @test problem.status == :Optimal
-@test abs((problem.optval - opt)/opt) < 1e-10
+@test abs((problem.optval - opt)/opt) < 1e-8
 @test maximum(abs.(x.value-xsave)) < 1e-7

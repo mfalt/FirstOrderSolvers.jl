@@ -20,10 +20,10 @@ function LineSearchWrapper(alg::T; lsinterval=100, kwargs...) where T
     if support_linesearch(alg) == Val{:False}
         @error "Algorithm $T does not support line search"
     end
-    LineSearchWrapper{T}(lsinterval, alg, [kwargs;alg.options])
+    LineSearchWrapper{T}(lsinterval, alg, merge(alg.options, kwargs))
 end
 
-function init_algorithm!(ls::LineSearchWrapper, model::FOSMathProgModel)
+function init_algorithm!(ls::LineSearchWrapper, model::AbstractFOSModel)
     alg, lsinterval = ls.alg, ls.lsinterval
     algdata, status =  init_algorithm!(alg, model)
     x = getinitialvalue(model, alg, algdata)

@@ -60,9 +60,13 @@ end
 
 function S1!(y, alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
     α12, S1 =  data.α12, data.S1
+    logextra(status, x)
     prox!(y, S1, x)
+    logextra(status, y)
     addprojeq(longstep, y, x)
     y .= α12.*y .+ (1-α12).*x
+    logextra(status, y)
+    return y
 end
 
 function S2!(y, alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
@@ -90,6 +94,7 @@ function Base.step(alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, long
     # tmp2 .= α12.*tmp2 .+ (1-α12).*tmp1
     #Calculate θ_F estimate, normedScalar(x1,x2,y1,y2) = |<x1-x2,y1-y2>|/(||x1-x2||*||y1-y2||)
     scl = clamp(normedScalar(tmp2,tmp1,tmp1,x), 0.0, 1.0)
+    scl = isnan(scl) ? 0.0 : scl 
     s = sqrt(1-scl^2) #Efficient way to sin(acos(scl))
     # Update α1, α2
     αopt = 2/(1+s) # α1,α2 = 2/(1+sin(Θ_F))

@@ -7,8 +7,8 @@ function solve!(model::AbstractFOSModel)
     debug = :debug ∈ keys(opts) ? opts[:debug] : 1
     eps = :eps ∈ keys(opts) ? opts[:eps] : 1e-5
     checki = :checki ∈ keys(opts) ? opts[:checki] : 100
+    x = :initx ∈ keys(opts) ? opts[:initx] : getinitialvalue(model, model.alg, model.data)
 
-    x = getinitialvalue(model, model.alg, model.data)
     #TODO general status
     status = model.status_generator(model, checki, eps, verbose, debug)
     guess = iterate(model.alg, model.data, status, x, max_iters)

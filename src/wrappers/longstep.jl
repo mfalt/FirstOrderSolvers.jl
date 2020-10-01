@@ -25,7 +25,7 @@ function LongstepWrapper(alg::T; longinterval=100, nsave=10, kwargs...) where T
     LongstepWrapper{T}(longinterval, nsave, alg, [kwargs...,alg.options...])
 end
 
-function init_algorithm!(long::LongstepWrapper, model::FOSMathProgModel)
+function init_algorithm!(long::LongstepWrapper, model::AbstractFOSModel)
     alg, longinterval, nsave = long.alg, long.longinterval, long.nsave
     !support_longstep(alg) && @error "Algorithm alg does not support longstep"
     data, status_generator =  init_algorithm!(alg, model)

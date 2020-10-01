@@ -18,6 +18,9 @@ include("testDRandGAPA.jl")
 println("Test: testPSD.jl")
 include("testPSD.jl")
 
+println("Test: testfeasibility.jl")
+include("testfeasibility.jl")
+
 println("Test: testprint.jl")
 include("testprint.jl")
 

@@ -15,6 +15,9 @@ mutable struct HSDEStatus <: AbstractStatus
     debug::Int64
 end
 
+function logextra(stat::HSDEStatus, z; override = false)
+    return false
+end
 
 """ checkstatus(stat::HSDEStatus, x)
 Returns `false` if no check was made
