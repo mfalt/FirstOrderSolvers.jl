@@ -1,7 +1,4 @@
 using ProximalOperators
-using Random
-using FirstOrderSolvers
-using Test
 Random.seed!(2)
 
 xsol1 = randn(100)
