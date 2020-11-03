@@ -1,34 +1,56 @@
 export AndersonWrapper
 
 mutable struct AndersonWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
-    lsinterval::Int64
     alg::T
+    m::Int64 # Max memory
+    θb::Float64 # θ̄  Regularization
+    τ::Float64  # Regularization
+    D::Float64 # Safe-guard
+    ϵ::Float64 # Safe-guard
     options
 end
 
 mutable struct AndersonWrapperData{T<:FOSSolverData} <: FOSSolverData
-    lsinterval::Int64
-    tmp1::Array{Float64,1}
-    tmp2::Array{Float64,1}
-    tmp3::Array{Float64,1}
-    mem::Array{Float64,1}
-    res::Array{Float64,1}
     algdata::T
+
+    # Algorithm memory
+    xk::Array{Float64,1}
+    gxk::Array{Float64,1}
+    gxk1::Array{Float64,1}
+    gx̃k::Array{Float64,1}
+    yk1::Array{Float64,1}
+    s::Array{Float64,2}
+    ŝ::Array{Float64,2}
+    x̃k::Array{Float64,1}
+    xk1::Array{Float64,1}
+    Hỹ::Array{Float64,2}
+    Hs::Array{Float64,2}
+    Hy::Array{Float64,1}
+    x0::Array{Float64,1}
+    mk::Int # Max memory
+
+    # Constants:
+    # α ? 
+    Ū::Float64 # Inital residual
+    Na::Int # N_{AA}
 end
 
-function AndersonWrapper(alg::T; lsinterval=100, kwargs...) where T
+function AndersonWrapper(alg::T; m=10, θ=0.01, τ=0.001, D = 1e6, ϵ=1e-6, kwargs...) where T
     if support_linesearch(alg) == Val{:False}
         @error "Algorithm $T does not support line search"
     end
-    AndersonWrapper{T}(lsinterval, alg, merge(alg.options, kwargs))
+    AndersonWrapper{T}(alg, m, θ, τ, D, ϵ, merge(alg.options, kwargs))
 end
 
-function init_algorithm!(ls::AndersonWrapper, model::AbstractFOSModel)
-    alg, lsinterval = ls.alg, ls.lsinterval
-    algdata, status =  init_algorithm!(alg, model)
-    x = getinitialvalue(model, alg, algdata)
-    data = AndersonWrapperData(lsinterval, similar(x), similar(x), similar(x), similar(x), similar(x), algdata)
-    return data, status
+function init_algorithm!(aa::AndersonWrapper, model::AbstractFOSModel)
+    algdata, status =  init_algorithm!(aa.alg, model)
+    x = getinitialvalue(model, aa.alg, algdata)
+    nx, m = length(x), aa.m
+    aadata = AndersonWrapperData(algdata, similar(x), similar(x), similar(x), similar(x), similar(x),
+        similar(x, nx, m), similar(x, nx, m), similar(x), similar(x), similar(x, nx, m), similar(x, nx, m), similar(x),
+        copy(x),
+        0, 0.0, 0)
+    return aadata, status
 end
 
 #getmn(data::AndersonWrapperData) = getmn(data.algdata)
@@ -42,31 +64,56 @@ function ϕ(θb, η)
     end
 end
 
+""" H!(dk, gxk, s, Hỹ, Hs, mk)
+    Compute dk = H*gxk
+""" 
+function H!(dk, gxk, s, Hỹ, Hs, mk)
+    dk .= gxk .+ sum(j -> (s[:,j] .- Hỹ[:,j]) .* (Hs[:,j]'gxk), 1:mk)
+    return
+end
+
 function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, status::AbstractStatus, longstep=nothing)
+    gxk = adata.gxk # g(xᵏ) :=xᵏ-f(xᵏ)
+    gxk1 = adata.gxk1 # g(xᵏ⁻¹)
+    gx̃k = adata.gx̃k# g(x̃ᵏ)
+    yk1 = adata.yk1# yₖ₋₁
+    s = adata.s # Array with sₖ, where i=mk -> k-1
+    ŝ = adata.ŝ # # Array with ŝₖ, where i=mk -> k-1
+    x̃k = adata.x̃k# x̃ᵏ
+    xk1 = adata.xk1 # xᵏ⁻¹
+    Hỹ = adata.Hỹ # Array with Hₖ₋ⱼỹₖ₋ⱼ, where i=mk -> k-1
+    Hs = adata.Hs # Array with Hₖ₋ⱼ'ŝₖ₋ⱼ/(ŝₖ₋ⱼ'Hyₖ₋ⱼ), where i=mk -> k-1
+    Hy = adata.Hy # Hₖ₋ⱼyₖ₋ⱼ
 
-    gxk, gxk1 # g(xᵏ) :=xᵏ-f(xᵏ), g(xᵏ⁻¹)
-    gx̃k # g(x̃ᵏ)
-    yk1 # yₖ₋₁
-    s[:,i] # Array with sₖ, where i=mk -> k-1
-    ŝ[:,i] # # Array with ŝₖ, where i=mk -> k-1
-    x̃k # x̃ᵏ
-    xk1 # xᵏ⁻¹
-    Hỹ[:,i] # Array with Hₖ₋ⱼỹₖ₋ⱼ, where i=mk -> k-1
-    Hs[:,i] # Array with Hₖ₋ⱼ'ŝₖ₋ⱼ/(ŝₖ₋ⱼ'Hyₖ₋ⱼ), where i=mk -> k-1
+    Ū = adata.Ū # Inital residual
+    Na = adata.Na # N_{AA}
 
-    # Constants:
-    θb # θ̄  Regularization
-    τ  # Regularization
+    # Constant parameters:
+    θb = wrap.θb # θ̄  Regularization
+    τ = wrap.τ  # Regularization
     # α ? 
-    D # Safe-guard
-    ϵ # Safe-guard
-    Ū # Inital residual
-    Na # N_{AA}
-    m # Max memory
+    D = wrap.D # Safe-guard
+    ϵ = wrap.ϵ # Safe-guard
+    m = wrap.m # Max memory
+
 
     adata.mk = adata.mk + 1 # Line 4
     mk = adata.mk # For local use
 
+    if i == 1
+        x0 = adata.x0
+        x1 = copy(x0)
+        step(wrap.alg, adata.algdata, x1, 0, status, nothing)
+        adata.xk1 .= x0
+        adata.gxk1 .= x0 .- x1
+    
+        adata.xk .= x1
+        adata.x̃k .= x1
+        fx1 = copy(x1)
+        step(wrap.alg, adata.algdata, fx1, 0, status, nothing)
+        adata.gxk .= x1 .- fx1
+        adata.gx̃k .= adata.gxk
+    end
     s[:,mk] .= x̃k .- xk1        # Line 5
     yk1 .= gx̃k .- gxk1      # Line 5
     # ŝk1 .= sk1 .- sum(ŝj -> (ŝj'sk1)/(ŝj'ŝj.*ŝj), ŝ[(k-mk):k-2])
@@ -81,58 +128,50 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
     end
     # Line  9-10
     # TODO use Hy = Hk1*yk1 = Hk1*(gx̃-gxk1)
-    γk1 = ŝ[:,mk]'Hy[:,mk]/norm(ŝ[:,mk])^2
+    H!(Hy, yk1, s, Hỹ, Hs, mk)
+    γk1 = ŝ[:,mk]'Hy/norm(ŝ[:,mk])^2
     θk1 = ϕ(θb, γk1)
     ỹk1 .= θk1.*yk1 .- (1-θk1).*gxk1
 
-    # TODO Compute Hỹ
-    # TODO Compute Hs
+    # Compute Hỹ (TODO Fix indices)
+    H!(view(Hỹ,:,mk), ỹk1, s, Hỹ, Hs, mk)
+    # Compute Hs (TODO Fix indices)
+    H!(view(Hs,:,mk), view(ŝ,:,mk), s, Hỹ, Hs, mk)
+    view(Hs,:,mk) ./= view(ŝ,:,mk)'view(Hỹ,:,mk)
 
     # Line 11
     # Hk1 .= Hk1 + ... # Next Hk1
     # x̃k .= xk .- Hk1*gxk # Next x̃k
-    dk .= gxk + sum(j -> (s[:,j] .- Hỹ[:,j]).* (Hs[:,j]'gxk), 1:mk)
+    H!(dk, gxk, s, Hỹ, Hs, mk) # dk .= gxk + sum(j -> (s[:,j] .- Hỹ[:,j]).* (Hs[:,j]'gxk), 1:mk)
     x̃k .= xk .- dk  # Next index x̃
 
+    # Compute f(x̃k) (next index)
+    gx̃k .= x̃k
+    step(wrap.alg, adata.algdata, gx̃k, i, status, longstep) # We only use this for gxk, gx̃k
+    gx̃k .= x̃k .- gx̃k # g(x) = x - f(x)
+
     # Line 12-14
-    if norm(gxk) <= D*U/(Na +1)^(1+ϵ)
+    if norm(gxk) <= D*Ū/(Na +1)^(1+ϵ) || i == 1
         xk1 .= xk # Save for next index
+        gxk1 .= gxk # Save for next index
+
         xk .= x̃k # Next index x and x̃
-
-        # We need to compute f(xk) now, use xk as temp variable for f(xk)
-        step(wrap.alg, adata.algdata, xk, i, status, longstep) # We only use this for gxk, gx̃k
-        gxk1 .= gx̃k # Save for next index
-
-        # Compute for next index
-        gxk .= x̃k .- xk  # this is same as x̃k - f(x̃k)
-        gx̃k .= gxk
+        gxk .= gx̃k # Next index gx
        
         adata.Na += 1
     else
+        # TODO α relaxation here
         xk1 .= xk   # Save for next index
-        step(wrap.alg, adata.algdata, xk, i, status, longstep) # Next index xk
         gxk1 .= gxk # Save for next index
+
+        # Compute f(xk)
+        step(wrap.alg, adata.algdata, xk, i, status, longstep) # Next index xk now
         gxk .= xk1 .- xk # Next index
     end
 end
 
-function normdiff(x::T,y::T) where T<:StridedVector
-    nx, ny = length(x), length(y)
-    s = 0.0
-    @assert nx == ny
-    for j = 1:nx
-        s += abs2(x[j]-y[j])
-    end
-    return sqrt(s)
-end
-
-function get_normres!(wrap::AndersonWrapper, adata::AndersonWrapperData, x, i, status::AbstractStatus)
-    adata.tmp2 .= x
-    step(wrap.alg, adata.algdata, x, i, status, nothing)
-    #If time to do adata
-    normres = normdiff(x,adata.tmp2)
-end
 
 function getsol(alg::AndersonWrapper, data::AndersonWrapperData, x)
     getsol(alg.alg, data.algdata, x)
 end
+

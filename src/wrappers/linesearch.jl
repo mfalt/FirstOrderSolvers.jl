@@ -74,16 +74,6 @@ function Base.step(wrap::LineSearchWrapper, lsdata::LineSearchWrapperData, x, i,
     end
 end
 
-function normdiff(x::T,y::T) where T<:StridedVector
-    nx, ny = length(x), length(y)
-    s = 0.0
-    @assert nx == ny
-    for j = 1:nx
-        s += abs2(x[j]-y[j])
-    end
-    return sqrt(s)
-end
-
 function get_normres!(wrap::LineSearchWrapper, lsdata::LineSearchWrapperData, x, i, status::AbstractStatus)
     lsdata.tmp2 .= x
     step(wrap.alg, lsdata.algdata, x, i, status, nothing)
