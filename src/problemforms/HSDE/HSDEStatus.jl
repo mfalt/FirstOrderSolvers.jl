@@ -25,6 +25,7 @@ If convergence check is done, returns `true` and sets stat.status to one of:
     :Continue, :Optimal, :Unbounded, :Infeasible
 """
 function checkstatus(stat::HSDEStatus, z; override = false)
+    println("Check status at: ", stat.i)
     #TODO fix m, n
     if stat.i % stat.checki == 0 || override
         t = time_ns() - stat.init_time

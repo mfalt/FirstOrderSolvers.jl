@@ -1,4 +1,4 @@
-using Convex
+using Convex, Random
 Random.seed!(2)
 
 m = 40;  n = 50
@@ -14,7 +14,7 @@ problem = minimize(sumsquares(A * x - b), [x >= 0])
 else
     opt = 12.38418747141913 # Before julia 1.5
 end
-aa = AndersonWrapper(DR(eps=ϵ, verbose=1))
+aa = AndersonWrapper(DR(eps=ϵ, verbose=1, direct=true, checki=1, max_iters=2))
 
 solve!(problem, aa)
 
