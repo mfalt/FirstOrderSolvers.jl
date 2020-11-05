@@ -22,6 +22,7 @@ mutable struct AndersonWrapperData{T<:FOSSolverData} <: FOSSolverData
     ỹk1::Array{Float64,1}
     s::Array{Float64,2}
     ŝ::Array{Float64,2}
+    ŝk1::Array{Float64,1}
     x̃k::Array{Float64,1}
     xk1::Array{Float64,1}
     Hỹ::Array{Float64,2}
@@ -50,7 +51,7 @@ function init_algorithm!(aa::AndersonWrapper, model::AbstractFOSModel)
     x = getinitialvalue(model, aa.alg, algdata)
     nx, m = length(x), aa.m
     aadata = AndersonWrapperData(algdata, similar(x), similar(x), similar(x), similar(x), similar(x), similar(x),
-        similar(x, nx, m+1), similar(x, nx, m+1), similar(x), similar(x), similar(x, nx, m), similar(x, nx, m), similar(x),
+        similar(x, nx, m+1), similar(x, nx, m+1), similar(x), similar(x), similar(x), similar(x, nx, m), similar(x, nx, m), similar(x),
         copy(x),
         0, 0.0, 0)
     return aadata, status
@@ -83,7 +84,8 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
     yk1 = adata.yk1 # yₖ₋₁
     ỹk1 = adata.ỹk1 # ỹₖ₋₁
     s = adata.s # Array with sₖ, where i=mk -> k-1
-    ŝ = adata.ŝ # # Array with ŝₖ, where i=mk -> k-1
+    ŝ = adata.ŝ # # Array with ŝₖ, where i=mk -> k-1, normalized
+    ŝk1 = adata.ŝk1 # ŝₖ₋₁, not normalized
     x̃k = adata.x̃k # x̃ᵏ
     xk1 = adata.xk1 # xᵏ⁻¹
     Hỹ = adata.Hỹ # Array with Hₖ₋ⱼỹₖ₋ⱼ, where i=mk -> k-1
@@ -111,6 +113,7 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
         step(wrap.alg, adata.algdata, x1, 0, NoStatus(:Continue), nothing)
         adata.xk1 .= x0
         adata.gxk1 .= x0 .- x1
+        adata.Ū = norm(adata.gxk1)
     
         adata.xk .= x1
         adata.x̃k .= x1
@@ -119,41 +122,45 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
         adata.gxk .= x1 .- fx1
         adata.gx̃k .= adata.gxk
     end
-    println("Iteration: ",i)
+    # println("Iteration: ",i)
     #println("xk: ", xk)
     s[:,mk] .= x̃k .- xk1        # Line 5
     yk1 .= gx̃k .- gxk1      # Line 5
     # ŝk1 .= sk1 .- sum(ŝj -> (ŝj'sk1)/(ŝj'ŝj.*ŝj), ŝ[(k-mk):k-2])
     # Line 6
     #ŝ[:,mk] .= s[:,mk] .+ sum(j -> ((ŝ[:,j]'s[:,mk])/(ŝ[:,j]'ŝ[:,j])).*ŝ[:,j] , 1:(mk-1))
-    ŝ[:,mk] .= s[:,mk] .+ ŝ[:,1:(mk-1)]*(ŝ[:,1:(mk-1)]'s[:,mk])
+    ŝk1 .= s[:,mk] .+ ŝ[:,1:(mk-1)]*(ŝ[:,1:(mk-1)]'s[:,mk]) # The c
 
     # Line 7-8
-    if mk == m+1 || norm(ŝ[:,mk]) < τ*norm(s[:,mk])
+    if mk == m+1 || norm(ŝk1) < τ*norm(s[:,mk])
+        # println("Resetting mk")
         adata.mk = 1
         mk = 1
-        ŝ[:,mk] .= s[:,mk]
+        ŝk1 .= s[:,mk]
         # Hk1 = I
     end
+
+    # Normalizing
+    ŝ[:,mk] .= ŝk1./(ŝk1'ŝk1)
     
     # Line  9-10
     # TODO use Hy = Hk1*yk1 = Hk1*(gx̃-gxk1)
-    H!(Hy, yk1, s, Hỹ, Hs, mk)
-    println("Hỹmk:", sum(Hỹ[:,mk]))
-    println("Hsk:", sum(Hs[:,mk]))
-    println("smk:", sum(s[:,mk]))
-    println("Hy : ", sum(Hy))
-    γk1 = ŝ[:,mk]'Hy/norm(ŝ[:,mk])^2
+    H!(Hy, yk1, s, Hỹ, Hs, mk-1)
+    γk1 = ŝ[:,mk]'Hy
     θk1 = ϕ(θb, γk1)
+    # println("θk1: ",θk1)
     ỹk1 .= θk1.*yk1 .- (1-θk1).*gxk1
 
     
     # Compute Hỹ (TODO Fix indices)
-    H!(view(Hỹ,:,mk), ỹk1, s, Hỹ, Hs, mk)
+    H!(view(Hỹ,:,mk), ỹk1, s, Hỹ, Hs, mk-1)
     # Compute Hs (TODO Fix indices)
-    H!(view(Hs,:,mk), view(ŝ,:,mk), s, Hỹ, Hs, mk)
-    view(Hs,:,mk) ./= view(ŝ,:,mk)'view(Hỹ,:,mk)
+    H!(view(Hs,:,mk), view(ŝ,:,mk), s, Hỹ, Hs, mk-1)
 
+    # println("Hỹmk:", sum(Hỹ[:,mk]))
+    # println("Hsk:", sum(Hs[:,mk]))
+    # println("smk:", sum(s[:,mk]))
+    # println("Hy : ", sum(Hy))
     # Line 11
     # Hk1 .= Hk1 + ... # Next Hk1
     # x̃k .= xk .- Hk1*gxk # Next x̃k
@@ -167,7 +174,9 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
     gx̃k .= x̃k .- gx̃k # g(x) = x - f(x)
 
     # Line 12-14
-    if norm(gxk) <= D*Ū/(Na +1)^(1+ϵ) || i == 1
+    # println("gk ", norm(gxk), "guard: ",D*Ū/(Na +1)^(1+ϵ))
+    if norm(gxk) <= D*Ū/(Na +1)^(1+ϵ) #|| i == 1
+        # println("Acc at :", i)
         xk1 .= xk # Save for next index
         gxk1 .= gxk # Save for next index
 
@@ -184,6 +193,7 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
         step(wrap.alg, adata.algdata, xk, i, NoStatus(:Continue), longstep) # Next index xk now
         gxk .= xk1 .- xk # Next index
     end
+    # println("xk:", xk)
 end
 
 

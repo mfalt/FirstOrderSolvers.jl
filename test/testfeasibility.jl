@@ -12,7 +12,7 @@ S2 = IndBox(0.0, Inf)
 problem = Feasibility(S1, S2, 100)
 
 
-sol, model = FirstOrderSolvers.solve!(problem, DR(eps=1e-8, verbose=0),checki=10)
+sol, model = FirstOrderSolvers.solve!(problem, DR(eps=1e-8, verbose=1),checki=10)
 
 @test sol.status == :Optimal
 @test minimum(sol.x) > -1e-12
@@ -26,7 +26,7 @@ sol, model = FirstOrderSolvers.solve!(problem, GAP(eps=1e-8, verbose=0))
 
 @test sol.status == :Indeterminate
 
-sol, model = FirstOrderSolvers.solve!(problem, FISTA(eps=1e-8, verbose=1))
+sol, model = FirstOrderSolvers.solve!(problem, FISTA(eps=1e-8, verbose=0))
 
 @test sol.status == :Indeterminate
 
