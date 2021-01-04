@@ -24,6 +24,9 @@ include("testfeasibility.jl")
 println("Test: testprint.jl")
 include("testprint.jl")
 
+println("Test: testanderson.jl")
+include("testanderson.jl")
+
 #println("Test: testspecific.jl")
 #include("testspecific.jl")
 

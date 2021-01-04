@@ -57,5 +57,6 @@ function HSDE_populatesolution(model::FOSMathProgModel, x, status::HSDEStatus)
     if endstatus == :Continue
         endstatus = :Indeterminate
     end
+    model.enditr = status.i
     solution = Solution(x[1:n]/τ, x[n+1:n+m]/τ, x[l+n+1:l+n+m]/τ, endstatus)
 end

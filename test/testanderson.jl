@@ -1,4 +1,4 @@
-using ProximalOperators, Test, Random
+using ProximalOperators, Test, Random, FirstOrderSolvers
 Random.seed!(2)
 
 xsol1 = randn(100)
@@ -11,14 +11,9 @@ S2 = IndBox(0.0, Inf)
 
 problem = Feasibility(S1, S2, 100)
 
-alg = DR(eps=1e-8, verbose=1, direct=true, checki=10)
-sol1, model1 = FirstOrderSolvers.solve!(problem, alg, checki=10)
-@test minimum(sol1.x) > -1e-12
-@test maximum(abs, A*sol1.x - b) < 1e-12
+alg = AndersonWrapper(DR(eps=1e-8, verbose=1, direct=true))
+sol2, model2 = FirstOrderSolvers.solve!(problem, alg, checki=10)
 
-
-alg = AndersonWrapper(DR(eps=1e-8, verbose=1, direct=true, checki=1))
-sol2, model2 = FirstOrderSolvers.solve!(problem, alg, checki=1)
 @test minimum(sol2.x) > -1e-12
 @test maximum(abs, A*sol2.x - b) < 1e-12
 
@@ -39,8 +34,6 @@ problem = minimize(sumsquares(A * x - b), [x >= 0])
 else
     opt = 12.38418747141913 # Before julia 1.5
 end
-aa = DR(eps=0.001*ϵ, direct=true)
-solve!(problem, aa)
 
 aa = AndersonWrapper(DR(eps=ϵ, direct=true))
 solve!(problem, aa)
@@ -51,10 +44,9 @@ solve!(problem, aa)
 
 xsave = copy(x.value)
 
-# Test indirect
+# # Test indirect
 problem = minimize(sumsquares(A * x - b), [x >= 0])
-solve!(problem, GAPA(eps=1e-4, verbose=1))
-solve!(problem, AndersonWrapper(GAPA(eps=1e-4, verbose=1)))
+solve!(problem, AndersonWrapper(DR(eps=1e-4, verbose=1, direct=false)))
 
 @test problem.status == :Optimal
 @test abs((problem.optval - opt)/opt) < 2e-3
@@ -62,17 +54,17 @@ solve!(problem, AndersonWrapper(GAPA(eps=1e-4, verbose=1)))
 
 #Test direct
 problem = minimize(sumsquares(A * x - b), [x >= 0])
-solve!(problem, GAP(direct=true, eps=1e-4, verbose=1, max_iters=100000))
-solve!(problem, AndersonWrapper(GAP(direct=true, eps=1e-4, verbose=1, max_iters=100000)))
+solve!(problem, AndersonWrapper(DR(direct=true, eps=1e-4, verbose=1), m=20))
 
 @test problem.status == :Optimal
 @test abs((problem.optval - opt)/opt) < 2e-3
 @test maximum(abs.(x.value-xsave)) < 1e-3
 
-# Test β in GAPA
-problem = minimize(sumsquares(A * x - b), [x >= 0])
-solve!(problem, GAPA(0.5, 0.9, eps=1e-9, verbose=0))
+# # Test β in GAPA
+# problem = minimize(sumsquares(A * x - b), [x >= 0])
+# solve!(problem, GAPA(0.5, 0.9, eps=1e-12, verbose=1))
+# solve!(problem, AndersonWrapper(GAPA(0.5, 0.9, eps=1e-12, verbose=1)))
 
-@test problem.status == :Optimal
-@test abs((problem.optval - opt)/opt) < 1e-8
-@test maximum(abs.(x.value-xsave)) < 1e-7
+# @test problem.status == :Optimal
+# @test abs((problem.optval - opt)/opt) < 1e-8
+# @test maximum(abs.(x.value-xsave)) < 1e-7

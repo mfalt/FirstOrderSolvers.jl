@@ -2,14 +2,14 @@ export LongstepWrapper
 
 include("saveplanes.jl")
 
-mutable struct LongstepWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
+mutable struct LongstepWrapper{T<:FOSAlgorithm} <: AbstractWrapper
     longinterval::Int64
     nsave::Int64
     alg::T
     options
 end
 
-mutable struct LongstepWrapperData{T<:FOSSolverData} <: FOSSolverData
+mutable struct LongstepWrapperData{T<:FOSSolverData} <: AbstractWrapperData
     longinterval::Int64
     nsave::Int64
     saved::SavedPlanes{Float64}

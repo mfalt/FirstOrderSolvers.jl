@@ -27,6 +27,7 @@ include("problemforms/Feasibility/FeasibilityStatus.jl")
 include("FOSSolverInterface.jl")  # MathProgBase interface
 include("solverwrapper.jl")
 
+include("wrappers/AbstractWrapper.jl")
 include("wrappers/longstep.jl")
 include("wrappers/linesearch.jl")
 include("wrappers/anderson.jl")

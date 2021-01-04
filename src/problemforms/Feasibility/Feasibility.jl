@@ -63,6 +63,7 @@ function populate_solution(model::FeasibilityModel, alg, data, x, status)
         endstatus = :Indeterminate
     end
     model.solve_stat = endstatus
+    model.enditr = status.i
     solution = FeasibilitySolution(x, endstatus)
 end
 

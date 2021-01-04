@@ -16,9 +16,20 @@ function solve!(model::AbstractFOSModel)
     return sol
 end
 
+function printalgheader(alg::FOSAlgorithm, status)
+    if status.verbose > 0
+        println("Algorithm: $(typeof(alg))")
+        if status.verbose > 0
+            for fn in fieldnames(typeof(alg))
+                println("$fn:$(getfield(alg, fn)) ")
+            end
+        end
+    end
+end
 
 function iterate(alg::FOSAlgorithm, data::FOSSolverData, status, x, max_iters)
     t1 = time()
+    printalgheader(alg, status)
     printstatusheader(status)
     for i = 1:max_iters
         status.i = i

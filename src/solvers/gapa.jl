@@ -1,21 +1,25 @@
 """
-`GAPA(α=1.0, β=0.0; kwargs...)``
+`GAPA(α=1.0, β=0.0, γ=0.0; kwargs...)``
 
 GAP Adaptive
 Same as GAP but with adaptive `α1,α2` set to optimal `αopt=2/(1+sinθ)`
 according to the estimate of the Friedrischs angle `θ`.
-`β` is averaging factor between `αopt` and `2`: `α1=α2= (1-β)*αopt + β*2.0`.
+`γ` is damping with old `αopt`, i.e `αoptₖ = (1-γ)*αopt + γ*αoptₖ₋₁`
+`β` is averaging factor between `αoptₖ` and `2`: `α1=α2= (1-β)*αoptₖ + β*2.0`.
+
 """
 mutable struct GAPA  <: FOSAlgorithm
     α::Float64
     β::Float64
+    γ::Float64
     direct::Bool
     options
 end
-GAPA(α=1.0, β=0.0; direct=false, kwargs...) = GAPA(α, β, direct, kwargs)
+GAPA(α=1.0, β=0.0, γ=0.0; direct=false, kwargs...) = GAPA(α, β, γ, direct, kwargs)
 
 mutable struct GAPAData{T1,T2} <: FOSSolverData
     α12::Float64
+    αopt::Float64
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
     constinit::Base.RefValue{Bool} # If constant term has been calculated (linesearch feature)
@@ -26,7 +30,7 @@ end
 
 function init_algorithm!(alg::GAPA, model::AbstractFOSModel)
     S1, S2, n, status_generator = get_sets_and_status(alg, model)
-    data = GAPAData(2.0, Array{Float64,1}(undef, n), Array{Float64,1}(undef, n),
+    data = GAPAData(2.0, 2.0, Array{Float64,1}(undef, n), Array{Float64,1}(undef, n),
             Ref(false), S1, S2)
     return data, status_generator
 end
@@ -78,8 +82,8 @@ function S2!(y, alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longste
 end
 
 function Base.step(alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, longstep=nothing)
-    α,β = alg.α,alg.β
-    α12,tmp1,tmp2,S1,S2 = data.α12,data.tmp1,data.tmp2,data.S1,data.S2
+    α,β,γ = alg.α,alg.β,alg.γ
+    α12,αopt,tmp1,tmp2,S1,S2 = data.α12,data.αopt,data.tmp1,data.tmp2,data.S1,data.S2
     # Relaxed projection onto S1
     S1!(tmp1, alg, data, x,    i, status, longstep)
     # prox!(tmp1, S1, x)
@@ -96,8 +100,10 @@ function Base.step(alg::GAPA, data::GAPAData, x, i, status::AbstractStatus, long
     scl = clamp(normedScalar(tmp2,tmp1,tmp1,x), 0.0, 1.0)
     scl = isnan(scl) ? 0.0 : scl 
     s = sqrt(1-scl^2) #Efficient way to sin(acos(scl))
+    # Update αopt
+    αopt = (1-γ)*2/(1+s) + γ*αopt # αopt = 2/(1+sin(Θ_F))
+    data.αopt = αopt
     # Update α1, α2
-    αopt = 2/(1+s) # α1,α2 = 2/(1+sin(Θ_F))
     data.α12 = (1-β)*αopt + β*2.0
     #Set output
     x .= α.*tmp2 .+ (1-α).*x

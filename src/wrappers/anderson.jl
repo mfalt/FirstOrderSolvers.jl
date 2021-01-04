@@ -1,7 +1,8 @@
 export AndersonWrapper
 
-mutable struct AndersonWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
+mutable struct AndersonWrapper{T<:FOSAlgorithm} <: AbstractWrapper
     alg::T
+    α::Float64
     m::Int64 # Max memory
     θb::Float64 # θ̄  Regularization
     τ::Float64  # Regularization
@@ -10,7 +11,7 @@ mutable struct AndersonWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
     options
 end
 
-mutable struct AndersonWrapperData{T<:FOSSolverData} <: FOSSolverData
+mutable struct AndersonWrapperData{T<:FOSSolverData} <: AbstractWrapperData
     algdata::T
 
     # Algorithm memory
@@ -37,14 +38,12 @@ mutable struct AndersonWrapperData{T<:FOSSolverData} <: FOSSolverData
     Na::Int # N_{AA}
 end
 
-function AndersonWrapper(alg::T; m=10, θ=0.01, τ=0.001, D = 1e6, ϵ=1e-6, kwargs...) where T
-    if support_linesearch(alg) == Val{:False}
-        @error "Algorithm $T does not support line search"
-    end
-    AndersonWrapper{T}(alg, m, θ, τ, D, ϵ, merge(alg.options, kwargs))
+function AndersonWrapper(alg::T; α=0.9, m=10, θ=0.01, τ=0.001, D = 1e6, ϵ=1e-6, kwargs...) where T
+    # if support_linesearch(alg) == Val{:False}
+    #     @error "Algorithm $T does not support line search"
+    # end
+    AndersonWrapper{T}(alg, α, m, θ, τ, D, ϵ, merge(alg.options, kwargs))
 end
-
-getcgiter(data::AndersonWrapperData) = getcgiter(data.algdata)
 
 function init_algorithm!(aa::AndersonWrapper, model::AbstractFOSModel)
     algdata, status =  init_algorithm!(aa.alg, model)
@@ -96,6 +95,7 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
     Na = adata.Na # N_{AA}
 
     # Constant parameters:
+    α = wrap.α # θ̄  Regularization
     θb = wrap.θb # θ̄  Regularization
     τ = wrap.τ  # Regularization
     # α ? 
@@ -115,9 +115,9 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
         adata.gxk1 .= x0 .- x1
         adata.Ū = norm(adata.gxk1)
     
-        adata.xk .= x1
-        adata.x̃k .= x1
-        fx1 = copy(x1)
+        adata.xk .= α.* x1 .+ (1-α) .* x0
+        adata.x̃k .= adata.xk
+        fx1 = copy(adata.xk)
         step(wrap.alg, adata.algdata, fx1, 0, NoStatus(:Continue), nothing)
         adata.gxk .= x1 .- fx1
         adata.gx̃k .= adata.gxk
@@ -192,12 +192,7 @@ function Base.step(wrap::AndersonWrapper, adata::AndersonWrapperData, xk, i, sta
         # Compute f(xk)
         step(wrap.alg, adata.algdata, xk, i, NoStatus(:Continue), longstep) # Next index xk now
         gxk .= xk1 .- xk # Next index
+        xk .= α.* xk1 .+ (1-α) .* xk # Relaxation
     end
     # println("xk:", xk)
 end
-
-
-function getsol(alg::AndersonWrapper, data::AndersonWrapperData, x)
-    getsol(alg.alg, data.algdata, x)
-end
-

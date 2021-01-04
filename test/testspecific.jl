@@ -22,6 +22,7 @@ solver = GAPA(eps=1e-8, max_iters=100000, checki=100, direct=true)
 solver = DR(eps=1e-8, max_iters=100000, checki=10, direct=true)
 solver = LongstepWrapper(GAPA(eps=1e-8, max_iters=10000, checki=10, direct=true), longinterval=50, nsave=2)
 solver = LongstepWrapper(GAPA(eps=1e-8, max_iters=10000, checki=10, direct=true), longinterval=50, nsave=5)
+solver = AndersonWrapper(DR(eps=1e-8, max_iters=100000, checki=10, direct=true))
 
 using Random
 x = Variable(200, 1)

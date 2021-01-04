@@ -1,12 +1,12 @@
 export LineSearchWrapper
 
-mutable struct LineSearchWrapper{T<:FOSAlgorithm} <: FOSAlgorithm
+mutable struct LineSearchWrapper{T<:FOSAlgorithm} <: AbstractWrapper
     lsinterval::Int64
     alg::T
     options
 end
 
-mutable struct LineSearchWrapperData{T<:FOSSolverData} <: FOSSolverData
+mutable struct LineSearchWrapperData{T<:FOSSolverData} <: AbstractWrapperData
     lsinterval::Int64
     tmp1::Array{Float64,1}
     tmp2::Array{Float64,1}
@@ -79,8 +79,4 @@ function get_normres!(wrap::LineSearchWrapper, lsdata::LineSearchWrapperData, x,
     step(wrap.alg, lsdata.algdata, x, i, status, nothing)
     #If time to do lsdata
     normres = normdiff(x,lsdata.tmp2)
-end
-
-function getsol(alg::LineSearchWrapper, data::LineSearchWrapperData, x)
-    getsol(alg.alg, data.algdata, x)
 end
